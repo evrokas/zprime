@@ -160,6 +160,47 @@ class WeatherStub {
     function __destruct() { $this->stop(); }
 }
 
+/** Runs tests/lib/sysmon_stub.php (a fake sysmonitor agent) on its own port. */
+class SysmonStub {
+    private $process = null;
+    private string $dir;
+    private int $port = 8784;
+
+    function start(): void {
+        $this->dir = sys_get_temp_dir() . '/zprime_sysmon_stub_' . getmypid();
+        @mkdir($this->dir, 0700, true);
+        file_put_contents($this->dir . '/count', '0');
+        file_put_contents($this->dir . '/mode', 'ok');
+        putenv('ZPRIME_STUB_DIR=' . $this->dir);
+
+        $cmd = sprintf('exec php -S 127.0.0.1:%d %s', $this->port, escapeshellarg(__DIR__ . '/../lib/sysmon_stub.php'));
+        $this->process = proc_open($cmd, [0 => ['pipe', 'r'], 1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $pipes);
+        $deadline = microtime(true) + 5;
+        while (microtime(true) < $deadline) {
+            $c = @fsockopen('127.0.0.1', $this->port, $e, $s, 0.2);
+            if ($c) { fclose($c); return; }
+            usleep(50000);
+        }
+        throw new RuntimeException('sysmon stub did not start');
+    }
+
+    function url(): string { return "http://127.0.0.1:{$this->port}/"; }
+    function requests(): int { return (int)file_get_contents($this->dir . '/count'); }
+    function setMode(string $mode): void { file_put_contents($this->dir . '/mode', $mode); }
+
+    function stop(): void {
+        if ($this->process === null) return;
+        $st = proc_get_status($this->process);
+        if ($st['running']) posix_kill($st['pid'], SIGTERM);
+        proc_close($this->process);
+        $this->process = null;
+        foreach (glob($this->dir . '/*') ?: [] as $f) @unlink($f);
+        @rmdir($this->dir);
+    }
+
+    function __destruct() { $this->stop(); }
+}
+
 /** Runs tests/lib/icon_site.php (a fake website) on its own port. */
 class IconSite {
     private $process = null;

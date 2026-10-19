@@ -29,11 +29,16 @@ templates:
 css:
   - dashboard:
     src: 'css/dashboard.css'
+  - sysmon:
+    src: 'css/sysmon.css'
 
 foot_script:
   - dashboard:
     type: "text/javascript"
     src: 'js/dashboard.js'
+  - sysmon:
+    type: "text/javascript"
+    src: 'js/sysmon.js'
 
 multilingual: false
 
@@ -107,6 +112,18 @@ routes:
     handler: zprime_place_save
     method: post
     access: authenticated
+  api_sysmon:
+    title: "System status"
+    url: "/api/sysmon"
+    handler: zprime_api_sysmon
+    method: get
+    access: authenticated
+  api_sysmon_series:
+    title: "System history"
+    url: "/api/sysmon/{host}/series"
+    handler: zprime_api_sysmon_series
+    method: get
+    access: authenticated
   place_order:
     title: "Order places"
     url: "/places/order"
@@ -138,6 +155,7 @@ structure:
     - content
     - favorite_links
     - favorite_places
+    - system_status
 
 modules:
   path:
@@ -149,13 +167,17 @@ modules:
     - clock_weather
     - favorite_links
     - favorite_places
+    - system_status
 
-# The two dashboard blocks belong to the home page only. Without this they also appear under every
+# The dashboard blocks belong to the home page only. Without this they also appear under every
 # other page that uses the main content region (for example /admin/users).
 modconf:
   favorite_links:
     display:
       homepage: {}
   favorite_places:
+    display:
+      homepage: {}
+  system_status:
     display:
       homepage: {}

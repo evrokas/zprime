@@ -30,4 +30,19 @@ temperature_unit: celsius
 # Status file written by this site's zops backup handler (see deploy/).
 # zops_backup_status_file: /var/lib/zops/zprime-backup-status.json
 
+# System block: live status of machines watched by sysmonitor
+# (https://github.com/evrokas/sysmonitor). Omit the block to hide it. Owner only unless
+# allow_all_users is true. Hosts are numbered by position: keep the order if you remove one.
+# sysmonitor:
+#   cache_seconds: 30
+#   sysmonitor_path: /opt/sysmonitor      # needed for a `local: true` host (this machine)
+#   allow_all_users: false
+#   hosts:
+#     - name: "This server"
+#       local: true                        # read in-process: no URL, no token
+#     - name: "NAS"
+#       url: "https://nas.example.com/sysmonitor/api.php"
+#       token: "the token from sysmonitor's bin/token.php"
+#       # allow_http: true                 # plain http, trusted LAN only: the token is sent in clear
+
 disabled_packages: []

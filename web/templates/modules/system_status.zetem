@@ -1,0 +1,22 @@
+<section class="block sysmon" data-sysmon data-url="{{{ $data_url }}}" data-series-base="{{{ $series_base }}}" aria-labelledby="h-system">
+    <div class="bh">
+        <h2 id="h-system">System</h2>
+        <div class="bh-actions"><span class="sys-updated" data-sys-updated role="status"></span></div>
+    </div>
+    <div data-sys-hosts><p class="empty">Loading…</p></div>
+
+    <dialog id="sys-dialog" class="dlg dlg-wide" aria-labelledby="sys-title">
+        <div class="sys-dlg">
+            <div class="sys-dlg-head">
+                <h3 id="sys-title" data-sys-title>Details</h3>
+                <button type="button" class="btn" data-close-dialog>Close</button>
+            </div>
+            <div class="seg" role="group" aria-label="Metric" data-sys-metrics></div>
+            <div class="seg" role="group" aria-label="Time range" data-sys-ranges></div>
+            <div class="sys-legend" data-sys-legend></div>
+            <div class="sys-chart" data-sys-chart></div>
+            <p class="sys-note" data-sys-note role="status"></p>
+            <button type="button" class="btn" data-sys-table-toggle aria-pressed="false">Show table</button>
+        </div>
+    </dialog>
+</section>

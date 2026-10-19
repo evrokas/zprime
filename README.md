@@ -150,6 +150,36 @@ The same install can be served on more than one hostname and the same accounts s
 Browser cookies belong to one hostname, so signing in on one does not sign you in on another: each
 hostname keeps its own 30-day cookie. True single sign-on would use the ErnsAuth module in ZeusFW.
 
+## System status (sysmonitor)
+
+The **System** block on the home page shows live CPU, memory, disk, temperature and network for the machines
+you watch with [sysmonitor](https://github.com/evrokas/sysmonitor), each tile with a sparkline; tap a tile for a
+history chart (1 h to 90 days, hover or touch for values, a table view, arrow keys on the chart).
+
+Install sysmonitor on each machine first (see its README), then add to `config/site.info.yaml`
+(template: `config/site.info.yaml.in`):
+
+```yaml
+sysmonitor:
+  sysmonitor_path: /opt/sysmonitor       # only needed for the local host
+  hosts:
+    - name: "This server"
+      local: true                         # this machine: read in-process, no URL or token
+    - name: "NAS"
+      url: "https://nas.example.com/sysmonitor/api.php"
+      token: "token from sysmonitor's bin/token.php"
+```
+
+- The browser never sees an agent's address or token: ZPrime asks the agents server-side. Plain `http://` is refused
+  unless the host has `allow_http: true` (trusted LAN only, the token travels in clear).
+- Only the **owner** sees the block and its endpoints, because machine details are sensitive. `allow_all_users: true`
+  opens it to every account.
+- Answers are cached for `cache_seconds` (default 30). A host that fails is not retried for a minute and the last data is
+  shown, marked "Showing last known data"; "Collector silent" means the machine answers but its collector stopped writing.
+- For a `local: true` host the web user must be able to read sysmonitor's `data/` directory *and* write the SQLite
+  `-shm` file (shared group, group-writable `data/`): see sysmonitor's README.
+- Leave `sysmonitor:` out and the block does not appear.
+
 ## Backups and monitoring (zops)
 
 `deploy/` holds the [zops](https://github.com/evrokas/zops) handlers, the same way ZPMS does:

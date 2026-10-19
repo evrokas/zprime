@@ -9,7 +9,9 @@ if(!defined('DB_NAME')) {
 
 require_once(__FWDIR__ . '/bootstrap.php');
 require_once(__DIR__ . '/dash_lib.php');
+require_once(__DIR__ . '/sysmon_lib.php');
 require_once(__DIR__ . '/dash.php');
+require_once(__DIR__ . '/sysmon.php');
 
 // A session lasts until the browser closes; staying signed in across
 // restarts and days is the separate "remember me" cookie (see
