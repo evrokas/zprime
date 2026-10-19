@@ -14,12 +14,6 @@ class favoritePlacesModule extends moduleClass {
             $places[] = $row;
         }
 
-        foreach($places as $i => &$p) {
-            $p['is_first'] = $i === 0;
-            $p['is_last'] = $i === count($places) - 1;
-        }
-        unset($p);
-
         return Renderer::render('favorite_places.zetem', [
             'places' => $places,
             'save_url' => rel_url('/places/save'),

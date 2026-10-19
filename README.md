@@ -6,7 +6,7 @@ the home screen of every device you use.
 - **Header:** live clock, date and the temperature at your home location.
 - **Websites:** a vertical list of favorite sites, each with the site's own icon. Add, edit and remove them. The edit dialog has a **Refresh icon** button.
 - **Ordering:** tap **Edit** on a block. Drag an item by its handle (the three-bar button) with a finger or the
-  mouse, or use the ↑ ↓ buttons. The order is saved per account and kept across devices.
+  mouse. The order is saved per account and kept across devices.
 - **Places:** favorite places with a **Drive** button that opens Google Maps driving directions
   (the Maps app on a phone). A place can be a street address, coordinates, or a pasted Google Maps
   link that contains coordinates.

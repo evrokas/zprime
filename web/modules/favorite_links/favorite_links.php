@@ -17,12 +17,6 @@ class favoriteLinksModule extends moduleClass {
             $links[] = $row;
         }
 
-        foreach($links as $i => &$l) {
-            $l['is_first'] = $i === 0;
-            $l['is_last'] = $i === count($links) - 1;
-        }
-        unset($l);
-
         return Renderer::render('favorite_links.zetem', [
             'links' => $links,
             'save_url' => rel_url('/links/save'),

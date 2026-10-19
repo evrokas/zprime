@@ -101,12 +101,6 @@ routes:
     handler: zprime_link_order
     method: post
     access: authenticated
-  link_move:
-    title: "Move website"
-    url: "/links/{id}/move"
-    handler: zprime_link_move
-    method: post
-    access: authenticated
   link_delete:
     title: "Delete website"
     url: "/links/{id}/delete"
@@ -123,12 +117,6 @@ routes:
     title: "Order places"
     url: "/places/order"
     handler: zprime_place_order
-    method: post
-    access: authenticated
-  place_move:
-    title: "Move place"
-    url: "/places/{id}/move"
-    handler: zprime_place_move
     method: post
     access: authenticated
   place_delete:

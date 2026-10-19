@@ -20,11 +20,7 @@
                     <span class="site-text"><b>{{{ $l['title'] }}}</b><small>{{{ $l['label'] }}}</small></span>
                 </a>
                 <span class="item-tools">
-                    <span class="move-tools" role="group" aria-label="Order of {{{ $l['title'] }}}">
-                        <button type="button" class="tool tool-grip" data-drag-handle aria-label="Drag {{{ $l['title'] }}} to reorder"></button>
-                        <button type="button" class="tool tool-move" data-move="up"{% if($l['is_first']): %} disabled{% endif %} aria-label="Move {{{ $l['title'] }}} up">&uarr;</button>
-                        <button type="button" class="tool tool-move" data-move="down"{% if($l['is_last']): %} disabled{% endif %} aria-label="Move {{{ $l['title'] }}} down">&darr;</button>
-                    </span>
+                    <button type="button" class="tool tool-grip" data-drag-handle aria-label="Drag {{{ $l['title'] }}} to reorder"></button>
                     <button type="button" class="tool" data-open-dialog="link-dialog"
                             data-id="{{{ $l['id'] }}}" data-title="{{{ $l['title'] }}}" data-url="{{{ $l['url'] }}}" data-icon="{{{ $l['icon_url'] }}}"
                             aria-label="Edit {{{ $l['title'] }}}">Edit</button>

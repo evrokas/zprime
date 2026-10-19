@@ -166,8 +166,6 @@ ul.sites, ul.places { list-style: none; margin: 0; padding: 0; }
   background: var(--surface); font-size: 14px;
 }
 .item-tools { flex-wrap: wrap; align-items: center; }
-.move-tools { display: inline-flex; gap: 6px; }
-.tool-move { min-width: 40px; padding: 0; font-size: 18px; line-height: 1; }
 .tool[disabled] { opacity: .35; cursor: default; }
 .move-status { margin: 0 0 10px; color: var(--danger); font-size: 14px; }
 .tool-danger { color: var(--danger); border-color: var(--danger); }

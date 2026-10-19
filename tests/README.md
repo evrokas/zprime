@@ -16,7 +16,7 @@ bin/run_tests.sh --functional-only
    the weather path (fetch, cache, stale reading, failure back-off) against a local stand-in for Open-Meteo,
    and website icons (discovery, storage, owner-only serving, refresh, the private-address guard) against a
    local fake website (`tests/lib/icon_site.php`), and reordering (one step at a time, duplicate sort values,
-   whole-list drag-and-drop ordering, isolation between accounts), and the Update button (real temporary git
+   whole-list drag-and-drop ordering (the order endpoint), isolation between accounts), and the Update button (real temporary git
    repositories: fast-forward, diverged, conflicting edits, unreachable remote, locking; then the HTTP gates:
    feature switch, sign-in, CSRF, owner only).
 

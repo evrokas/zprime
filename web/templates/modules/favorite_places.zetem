@@ -21,11 +21,7 @@
                        aria-label="Drive to {{{ $p['name'] }}} in Google Maps">Drive</a>
                 </div>
                 <span class="item-tools">
-                    <span class="move-tools" role="group" aria-label="Order of {{{ $p['name'] }}}">
-                        <button type="button" class="tool tool-grip" data-drag-handle aria-label="Drag {{{ $p['name'] }}} to reorder"></button>
-                        <button type="button" class="tool tool-move" data-move="up"{% if($p['is_first']): %} disabled{% endif %} aria-label="Move {{{ $p['name'] }}} up">&uarr;</button>
-                        <button type="button" class="tool tool-move" data-move="down"{% if($p['is_last']): %} disabled{% endif %} aria-label="Move {{{ $p['name'] }}} down">&darr;</button>
-                    </span>
+                    <button type="button" class="tool tool-grip" data-drag-handle aria-label="Drag {{{ $p['name'] }}} to reorder"></button>
                     <button type="button" class="tool" data-open-dialog="place-dialog"
                             data-id="{{{ $p['id'] }}}" data-name="{{{ $p['name'] }}}" data-where="{{{ $p['where'] }}}"
                             aria-label="Edit {{{ $p['name'] }}}">Edit</button>

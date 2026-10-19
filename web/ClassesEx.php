@@ -178,51 +178,13 @@ class dashPlacesClassEx extends dashPlacesClass {
 }
 
 /**
- * Ordering of a user's websites and places. Only ever moves one item one
- * step, and renumbers the whole list 0..n-1 each time, so duplicate or gappy
- * sort_order values (older rows, rows that share the default) cannot make a
- * move do nothing or move the wrong item.
+ * Ordering of a user's websites and places. The page sends the whole new order
+ * (drag and drop); the list is renumbered 0..n-1 each time, so duplicate or
+ * gappy sort_order values (older rows, rows that share the default) cannot
+ * make a reorder do nothing or land in the wrong place.
  */
 class dashOrder {
     private const TABLES = ['dash_links', 'dash_places'];
-
-    /** @return bool false when the item is not one of this user's (or the arguments are invalid) */
-    static function move(string $table, int $userId, int $id, string $dir): bool {
-        if(!in_array($table, self::TABLES, true) || !in_array($dir, ['up', 'down'], true)) return false;
-
-        $pdo = dbConnection::getConnection();
-        $pdo->beginTransaction();
-        try {
-            $st = $pdo->prepare("SELECT id FROM `$table` WHERE user_id=:uid ORDER BY sort_order, id FOR UPDATE");
-            $st->bindValue(':uid', $userId, PDO::PARAM_INT);
-            $st->execute();
-            $ids = array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN));
-
-            $i = array_search($id, $ids, true);
-            if($i === false) {
-                $pdo->rollBack();
-                return false;
-            }
-            $j = $dir === 'up' ? $i - 1 : $i + 1;
-            if($j >= 0 && $j < count($ids)) {
-                [$ids[$i], $ids[$j]] = [$ids[$j], $ids[$i]];
-            }
-
-            $upd = $pdo->prepare("UPDATE `$table` SET sort_order=:pos WHERE id=:id AND user_id=:uid");
-            foreach($ids as $pos => $rowId) {
-                $upd->bindValue(':pos', $pos, PDO::PARAM_INT);
-                $upd->bindValue(':id', $rowId, PDO::PARAM_INT);
-                $upd->bindValue(':uid', $userId, PDO::PARAM_INT);
-                $upd->execute();
-            }
-            $pdo->commit();
-            return true;
-        } catch(\Throwable $e) {
-            if($pdo->inTransaction()) $pdo->rollBack();
-            error_log('dashOrder::move failed: ' . $e->getMessage());
-            return false;
-        }
-    }
 
     /**
      * Puts the user's items in the order given by $ids (as set by drag-and-drop). Ids that are not the
