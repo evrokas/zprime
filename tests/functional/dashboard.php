@@ -145,7 +145,7 @@ function zprime_functional_dashboard(TestRunner $runner, string $baseUrl): void 
         $http = new TestHttpClient($baseUrl);
         $m = $http->get('/manifest.webmanifest');
         assert_equal(200, $m['status']);
-        assert_equal('ZPrime', json_decode($m['body'], true)['name'] ?? null);
+        assert_equal('Dashboard', json_decode($m['body'], true)['name'] ?? null);
         assert_equal(200, $http->get('/assets/icon-192.png')['status']);
         assert_equal(200, $http->get('/assets/apple-touch-icon.png')['status']);
         $login = $http->get('/login')['body'];

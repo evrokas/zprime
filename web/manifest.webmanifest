@@ -1,6 +1,6 @@
 {
-  "name": "ZPrime",
-  "short_name": "ZPrime",
+  "name": "Dashboard",
+  "short_name": "Dashboard",
   "description": "Personal home dashboard",
   "start_url": "./",
   "scope": "./",

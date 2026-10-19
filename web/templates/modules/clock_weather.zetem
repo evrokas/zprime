@@ -1,6 +1,6 @@
 <header class="top" data-clock data-tz="{{{ $tz }}}">
     <div class="top-main">
-        <div class="brand">ZPrime <span>{{{ $home_label }}}</span></div>
+        <div class="brand">Dashboard <span>{{{ $home_label }}}</span></div>
         <div class="clock" aria-live="off"><span data-clock-hm>{{{ $now_hm }}}</span><small data-clock-s>{{{ $now_s }}}</small></div>
         <div class="date" data-clock-date>{{{ $now_date }}}</div>
     </div>

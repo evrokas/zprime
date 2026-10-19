@@ -1,7 +1,7 @@
 <div class="login-page">
     <form class="login-card" action="{{ $action }}" method="post">
         {{ csrf_field() }}
-        <div class="login-brand">ZPrime<span>Personal dashboard</span></div>
+        <div class="login-brand">Dashboard<span>Sign in</span></div>
 
         <label class="field" for="username">Username
             <input type="text" name="username" id="username" autocomplete="username"
