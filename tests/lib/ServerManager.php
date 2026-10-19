@@ -31,7 +31,7 @@ class TestServer {
         // actual php -S server, so stop() can signal it directly without
         // needing process-group tricks to reach through an intermediate sh.
         $cmd = sprintf(
-            'exec env ZPRIME_TEST_SERVER=1 php -d display_errors=1 -S %s:%d -t %s %s',
+            'exec env ZPRIME_TEST_SERVER=1 ZPRIME_FETCH_ALLOW_PRIVATE=1 php -d display_errors=1 -S %s:%d -t %s %s',
             escapeshellarg($this->host),
             $this->port,
             escapeshellarg($webRoot),

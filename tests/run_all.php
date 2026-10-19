@@ -53,6 +53,7 @@ require_once __DIR__ . '/functional/helpers.php';
 require_once __DIR__ . '/functional/auth.php';
 require_once __DIR__ . '/functional/dashboard.php';
 require_once __DIR__ . '/functional/weather.php';
+require_once __DIR__ . '/functional/icons.php';
 
 // Pure helper checks need no database or server.
 $libRunner = new TestRunner('Helpers (validation, Maps URLs)');
@@ -71,6 +72,10 @@ putenv('ZPRIME_WEATHER_URL=' . $stub->url());
 @unlink(__DIR__ . '/../web/cache/zprime-weather.json');
 @unlink(__DIR__ . '/../web/cache/zprime-weather.json.fail');
 
+// A fake website (pages and icons in several shapes) for the favicon tests.
+$site = new IconSite();
+$site->start();
+
 $server = new TestServer();
 $server->start();
 
@@ -86,9 +91,14 @@ try {
     $wxRunner = new TestRunner('Weather');
     zprime_functional_weather($wxRunner, $server->baseUrl(), $stub);
     $ok = $wxRunner->run() && $ok;
+
+    $iconRunner = new TestRunner('Website icons');
+    zprime_functional_icons($iconRunner, $server->baseUrl(), $site);
+    $ok = $iconRunner->run() && $ok;
 } finally {
     $server->stop();
     $stub->stop();
+    $site->stop();
 }
 
 echo $ok ? "ALL TESTS PASSED\n" : "TESTS FAILED -- do not deploy this change.\n";

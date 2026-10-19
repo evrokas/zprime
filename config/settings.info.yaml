@@ -77,6 +77,18 @@ routes:
     handler: zprime_link_save
     method: post
     access: authenticated
+  link_icon:
+    title: "Website icon"
+    url: "/links/{id}/icon"
+    handler: zprime_link_icon
+    method: get
+    access: authenticated
+  link_icon_refresh:
+    title: "Refresh website icon"
+    url: "/links/{id}/icon/refresh"
+    handler: zprime_link_icon_refresh
+    method: post
+    access: authenticated
   link_delete:
     title: "Delete website"
     url: "/links/{id}/delete"

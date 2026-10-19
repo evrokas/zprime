@@ -19,5 +19,18 @@ table:
       type: int
       default: 0
 
+    # The site's favicon, fetched by the server (web/dash_lib.php). Only ever
+    # read through /links/{id}/icon, never selected into the page listing.
+    - name: icon
+      type: mediumblob
+
+    - name: icon_mime
+      type: varchar(40)
+
+    # When the last fetch was attempted, successful or not. NULL means "never
+    # tried": the page asks for the icon of such a link once, in the background.
+    - name: icon_fetched
+      type: datetime
+
     - name: cdate
       type: "@cdate"

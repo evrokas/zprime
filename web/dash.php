@@ -88,8 +88,14 @@ function zprime_link_save($params) {
     }
 
     if($id > 0) {
-        if(dashLinksClassEx::change($uid, $id, $title, $url)) $kernel->addStatus('notice', 'Website saved.');
-        else $kernel->addStatus('error', 'That website no longer exists.');
+        $before = dashLinksClassEx::mine($uid, $id);
+        if(dashLinksClassEx::change($uid, $id, $title, $url)) {
+            $kernel->addStatus('notice', 'Website saved.');
+            // Moved to another site: the old icon no longer applies.
+            if($before && strcasecmp(zprime_url_label($before['url']), zprime_url_label($url)) !== 0) {
+                dashLinksClassEx::clearIcon($uid, $id);
+            }
+        } else $kernel->addStatus('error', 'That website no longer exists.');
     } else {
         dashLinksClassEx::create($uid, $title, $url);
         $kernel->addStatus('notice', 'Website added.');
@@ -144,4 +150,52 @@ function zprime_place_delete($params) {
 
     if(dashPlacesClassEx::remove($uid, (int)($params['id'] ?? 0))) $kernel->addStatus('notice', 'Place removed.');
     zprime_back_home();
+}
+
+/** The stored favicon of one of the signed-in user's websites. */
+function zprime_link_icon($params) {
+    $uid = zprime_current_user_id();
+    $row = $uid === null ? null : dashLinksClassEx::iconOf($uid, (int)($params['id'] ?? 0));
+    if($row === null) {
+        http_response_code(404);
+        exit();
+    }
+    header('Content-Type: ' . $row['icon_mime']);
+    header('Content-Length: ' . strlen($row['icon']));
+    header('X-Content-Type-Options: nosniff');
+    header("Content-Security-Policy: default-src 'none'; sandbox");
+    // The page asks for ?v=<fetch time>, so a refreshed icon is a new URL.
+    header('Cache-Control: private, max-age=31536000, immutable');
+    header_remove('Pragma');
+    header_remove('Expires');
+    echo $row['icon'];
+    exit();
+}
+
+/** Fetches (or re-fetches) the favicon of one website. JSON in, JSON out; used by the page itself. */
+function zprime_link_icon_refresh($params) {
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-store');
+
+    $reply = function (int $status, array $body): never {
+        http_response_code($status);
+        echo json_encode($body);
+        exit();
+    };
+
+    if(!csrfClass::verifyRequest()) $reply(403, ['ok' => false, 'error' => 'Your session expired. Reload the page and try again.']);
+    $uid = zprime_current_user_id();
+    if($uid === null) $reply(401, ['ok' => false, 'error' => 'Please sign in again.']);
+
+    $id = (int)($params['id'] ?? 0);
+    $link = dashLinksClassEx::mine($uid, $id);
+    if($link === null) $reply(404, ['ok' => false, 'error' => 'That website no longer exists.']);
+
+    $r = zprime_favicon_fetch($link['url']);
+    if(!$r['ok']) {
+        dashLinksClassEx::markIconTried($uid, $id);
+        $reply(200, ['ok' => false, 'error' => $r['error']]);
+    }
+    dashLinksClassEx::storeIcon($uid, $id, $r['bytes'], $r['mime']);
+    $reply(200, ['ok' => true, 'icon' => rel_url('/links/' . $id . '/icon') . '?v=' . time()]);
 }

@@ -56,7 +56,9 @@ function zprime_functional_auth(TestRunner $runner, string $baseUrl): void {
         $res = TestFixtures::login(new TestHttpClient($baseUrl), TestFixtures::USER_A, TestFixtures::PASS_A, true);
         $c = zprime_set_cookie($res, 'zeusfwrememberme');
         assert_not_null($c, 'no remember-me cookie');
-        assert_contains('Max-Age=2592000', $c['attrs'], 'cookie lifetime is not 30 days (2592000 s)');
+        // PHP computes Max-Age from the clock when the header is sent, so it can read a second or two under 30 days.
+        assert_true((bool)preg_match('/Max-Age=(\d+)/', $c['attrs'], $m) && $m[1] <= 2592000 && $m[1] >= 2592000 - 10,
+            'cookie lifetime is not 30 days (2592000 s): ' . $c['attrs']);
         assert_contains('HttpOnly', $c['attrs']);
         assert_contains('SameSite=Lax', $c['attrs']);
     });

@@ -127,6 +127,17 @@ ul.sites, ul.places { list-style: none; margin: 0; padding: 0; }
   font: 600 15px var(--font-body); font-style: normal; color: #fff;
   background: hsl(var(--h, 190) 45% 36%);
 }
+/* A fetched icon sits on a neutral tile so transparent and dark icons read in both themes. */
+.fav.fav-icon { background: var(--surface); border: 1px solid var(--border); }
+.fav-icon img { width: 24px; height: 24px; object-fit: contain; display: block; }
+.fav-lg { width: 44px; height: 44px; border-radius: 11px; }
+.fav-lg img { width: 30px; height: 30px; }
+.icon-row { display: flex; align-items: center; gap: 12px; padding: 10px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); }
+.icon-row-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.icon-row-text small { color: var(--text-2); font-size: 13px; }
+.icon-row-text small.is-error { color: var(--danger); }
+.icon-row .btn { flex: none; }
+.icon-row .btn[disabled] { opacity: .6; cursor: progress; }
 .site-text { min-width: 0; display: flex; flex-direction: column; }
 .site-text b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .site-text small { font: 12px var(--font-mono); color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

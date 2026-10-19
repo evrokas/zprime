@@ -4,7 +4,7 @@ A personal home dashboard, built mainly for phones and also laid out for desktop
 the home screen of every device you use.
 
 - **Header:** live clock, date and the temperature at your home location.
-- **Websites:** a grid of favorite sites. Add, edit and remove them.
+- **Websites:** a grid of favorite sites, each with the site's own icon. Add, edit and remove them. The edit dialog has a **Refresh icon** button.
 - **Places:** favorite places with a **Drive** button that opens Google Maps driving directions
   (the Maps app on a phone). A place can be a street address, coordinates, or a pasted Google Maps
   link that contains coordinates.
@@ -75,6 +75,27 @@ and every request ends in a 500. If you already hit this: `sudo rm /tmp/fwkernel
 Weather comes from [Open-Meteo](https://open-meteo.com/) (no API key). The server fetches it and caches
 it in `web/cache/`, so many open devices cost one request per interval. If the service is down the last
 reading is shown, and failed fetches are not retried for a minute.
+
+### Website icons
+
+The server fetches each site's icon (the `<link rel="icon">` or Apple touch icon it declares, closest to
+64 px, else `/favicon.ico`) and keeps it in the database, so your browser never contacts those sites.
+Saving a website is instant; the page fetches missing icons in the background, one at a time, and tries
+each link once. **Refresh icon** in the edit dialog fetches again; if that fails the old icon stays.
+Changing a link to another hostname clears its icon and fetches the new one. PNG, GIF, JPEG, WebP and ICO
+are accepted up to 64 KB. SVG is refused because it can carry script.
+
+Because the address is typed by a person, the fetcher is guarded against being aimed at your own network:
+http(s) on ports 80 and 443 only, every address a hostname resolves to must be public, the checked address
+is the one connected to, redirects are re-checked at each hop, and sizes and times are capped. Sites that
+only exist on a private network (a router page, `localhost`) therefore get the letter tile, not an icon.
+
+`ZPRIME_FETCH_ALLOW_PRIVATE=1` switches that guard off. It exists for the test suite and must never be set
+on a server.
+
+**Upgrading an install from before icons:** run `fw/bin/update.sh` and apply the three `ADD icon...`
+statements it proposes for `dash_links` (it also lists `cdate` "changes" for both tables; those are the
+framework's `DATETIME`/`datetime` spelling noise and can be skipped).
 
 ### Several hostnames
 

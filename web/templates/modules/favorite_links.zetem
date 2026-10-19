@@ -1,4 +1,4 @@
-<section class="block" data-block aria-labelledby="h-links">
+<section class="block" data-block data-links aria-labelledby="h-links">
     <div class="bh">
         <h2 id="h-links">Websites</h2>
         <div class="bh-actions">
@@ -12,14 +12,14 @@
     {% else: %}
         <ul class="sites">
         {% foreach($links as $l): %}
-            <li class="site-item">
+            <li class="site-item" data-link-id="{{{ $l['id'] }}}"{% if($l['needs_icon']): %} data-needs-icon="1"{% endif %}>
                 <a class="site" href="{{{ $l['url'] }}}" rel="noopener noreferrer">
-                    <i class="fav" style="--h: {{{ $l['hue'] }}}" aria-hidden="true">{{{ $l['initial'] }}}</i>
+                    <i class="fav{% if($l['icon_url'] !== ''): %} fav-icon{% endif %}" style="--h: {{{ $l['hue'] }}}" data-fav data-letter="{{{ $l['initial'] }}}" aria-hidden="true">{% if($l['icon_url'] !== ''): %}<img src="{{{ $l['icon_url'] }}}" alt="" width="24" height="24" loading="lazy">{% else: %}{{{ $l['initial'] }}}{% endif %}</i>
                     <span class="site-text"><b>{{{ $l['title'] }}}</b><small>{{{ $l['label'] }}}</small></span>
                 </a>
                 <span class="item-tools">
                     <button type="button" class="tool" data-open-dialog="link-dialog"
-                            data-id="{{{ $l['id'] }}}" data-title="{{{ $l['title'] }}}" data-url="{{{ $l['url'] }}}"
+                            data-id="{{{ $l['id'] }}}" data-title="{{{ $l['title'] }}}" data-url="{{{ $l['url'] }}}" data-icon="{{{ $l['icon_url'] }}}"
                             aria-label="Edit {{{ $l['title'] }}}">Edit</button>
                     <form method="post" action="{{{ $delete_base }}}/{{{ $l['id'] }}}/delete" data-confirm="Remove {{{ $l['title'] }}}?">
                         {{ csrf_field() }}
@@ -31,7 +31,7 @@
         </ul>
     {% endif %}
 
-    <dialog id="link-dialog" class="dlg">
+    <dialog id="link-dialog" class="dlg" data-icon-base="{{{ $delete_base }}}">
         <form method="post" action="{{{ $save_url }}}">
             {{ csrf_field() }}
             <input type="hidden" name="id" value="">
@@ -42,6 +42,14 @@
             <label class="field" for="link-url">Address
                 <input type="text" id="link-url" name="url" inputmode="url" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off" placeholder="example.com" required>
             </label>
+            <div class="icon-row" data-icon-row hidden>
+                <span class="fav fav-icon fav-lg" data-dlg-fav aria-hidden="true"></span>
+                <div class="icon-row-text">
+                    <b>Site icon</b>
+                    <small data-icon-status role="status">Fetched from the site itself.</small>
+                </div>
+                <button type="button" class="btn" data-refresh-icon aria-label="Refresh the icon of this website">&#x21bb; Refresh icon</button>
+            </div>
             <div class="dlg-actions">
                 <button type="button" class="btn" data-close-dialog>Cancel</button>
                 <button type="submit" class="btn btn-solid">Save</button>

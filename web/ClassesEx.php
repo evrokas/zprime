@@ -26,7 +26,9 @@ class dashLinksClassEx extends dashLinksClass {
     /** @return array<int,array<string,mixed>> */
     static function forUser(int $userId): array {
         $st = dbConnection::getConnection()->prepare(
-            "SELECT id, title, url, sort_order FROM dash_links WHERE user_id=:uid ORDER BY sort_order, id");
+            "SELECT id, title, url, sort_order, (icon IS NOT NULL) AS has_icon,
+                    (icon_fetched IS NULL) AS needs_icon, UNIX_TIMESTAMP(icon_fetched) AS icon_ts
+             FROM dash_links WHERE user_id=:uid ORDER BY sort_order, id");
         $st->bindValue(':uid', $userId, PDO::PARAM_INT);
         $st->execute();
         return $st->fetchAll(PDO::FETCH_ASSOC);
@@ -54,6 +56,55 @@ class dashLinksClassEx extends dashLinksClass {
         $st->execute();
         // rowCount() is 0 for an unchanged row too, so confirm ownership separately.
         return $st->rowCount() > 0 || self::owns($userId, $id);
+    }
+
+    /** The user's own row (id, url) or null. Never selects the icon bytes. */
+    static function mine(int $userId, int $id): ?array {
+        $st = dbConnection::getConnection()->prepare("SELECT id, url FROM dash_links WHERE id=:id AND user_id=:uid");
+        $st->bindValue(':id', $id, PDO::PARAM_INT);
+        $st->bindValue(':uid', $userId, PDO::PARAM_INT);
+        $st->execute();
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
+    /** @return array{icon:string, icon_mime:string}|null the stored icon, only for its owner */
+    static function iconOf(int $userId, int $id): ?array {
+        $st = dbConnection::getConnection()->prepare(
+            "SELECT icon, icon_mime FROM dash_links WHERE id=:id AND user_id=:uid AND icon IS NOT NULL");
+        $st->bindValue(':id', $id, PDO::PARAM_INT);
+        $st->bindValue(':uid', $userId, PDO::PARAM_INT);
+        $st->execute();
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
+    static function storeIcon(int $userId, int $id, string $bytes, string $mime): bool {
+        $st = dbConnection::getConnection()->prepare(
+            "UPDATE dash_links SET icon=:icon, icon_mime=:mime, icon_fetched=NOW() WHERE id=:id AND user_id=:uid");
+        $st->bindValue(':icon', $bytes, PDO::PARAM_LOB);
+        $st->bindValue(':mime', $mime);
+        $st->bindValue(':id', $id, PDO::PARAM_INT);
+        $st->bindValue(':uid', $userId, PDO::PARAM_INT);
+        $st->execute();
+        return $st->rowCount() > 0;
+    }
+
+    /** Records that a fetch was tried, so the page does not ask again on every visit. */
+    static function markIconTried(int $userId, int $id): void {
+        $st = dbConnection::getConnection()->prepare("UPDATE dash_links SET icon_fetched=NOW() WHERE id=:id AND user_id=:uid");
+        $st->bindValue(':id', $id, PDO::PARAM_INT);
+        $st->bindValue(':uid', $userId, PDO::PARAM_INT);
+        $st->execute();
+    }
+
+    /** Forgets the icon (the address moved to another site), so it is fetched again. */
+    static function clearIcon(int $userId, int $id): void {
+        $st = dbConnection::getConnection()->prepare(
+            "UPDATE dash_links SET icon=NULL, icon_mime=NULL, icon_fetched=NULL WHERE id=:id AND user_id=:uid");
+        $st->bindValue(':id', $id, PDO::PARAM_INT);
+        $st->bindValue(':uid', $userId, PDO::PARAM_INT);
+        $st->execute();
     }
 
     static function owns(int $userId, int $id): bool {

@@ -13,7 +13,9 @@ bin/run_tests.sh --functional-only
    sign-in, wrong passwords, lockout, CSRF, the 30-day remember-me cookie (lifetime, flags, restoring a
    session from the cookie alone with a different User-Agent, rotation, revocation on sign-out),
    websites and places (add, edit, remove, validation, escaping, isolation between two accounts), and
-   the weather path (fetch, cache, stale reading, failure back-off) against a local stand-in for Open-Meteo.
+   the weather path (fetch, cache, stale reading, failure back-off) against a local stand-in for Open-Meteo,
+   and website icons (discovery, storage, owner-only serving, refresh, the private-address guard) against a
+   local fake website (`tests/lib/icon_site.php`).
 
 ## One-time setup
 

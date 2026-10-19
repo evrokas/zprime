@@ -11,6 +11,9 @@ class favoriteLinksModule extends moduleClass {
             $row['label'] = zprime_url_label($row['url']);
             $row['initial'] = mb_strtoupper(mb_substr(trim($row['title']), 0, 1)) ?: '?';
             $row['hue'] = crc32(zprime_url_label($row['url'])) % 360;
+            $row['icon_url'] = $row['has_icon']
+                ? rel_url('/links/' . $row['id'] . '/icon') . '?v=' . (int)$row['icon_ts']
+                : '';
             $links[] = $row;
         }
 
