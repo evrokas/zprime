@@ -36,9 +36,38 @@ fw/bin/update.sh    # generates the tables from web/classes/yaml/*.yaml and the 
 php bin/setup.php --user=evangelos --name="Evangelos Rokas" --email=you@example.com
 ```
 
-`bin/setup.php` asks for a password (at least 10 characters), creates the `owner` role and your
-account. Run it again to reset a password or unlock an account. The owner role also opens
-`/admin/users` for adding more accounts.
+`bin/setup.php` asks for a password (at least 10 characters) and creates the account. The first account
+ever created becomes the **owner** (the superuser role). Run it again to reset a password or unlock an
+account.
+
+### Adding more people
+
+Each person gets their own account with their own websites and places. Two ways:
+
+**On the web (as the owner):** sign in, tap **Users** in the header, then **Add new**. Fill in name, email,
+username and a password and press Save. **Active** is ticked for you; leave it ticked or the account cannot
+sign in. Tell the person their username and password; there is no email invitation. They sign in at the
+same address, tick "Keep me signed in" if they want, and see an empty dashboard of their own.
+
+**On the command line:** `sudo -u www-data php bin/setup.php --user=maria --name="Maria"` asks for a
+password. Later accounts are ordinary users; add `--owner` only for someone who should be able to manage
+users (and use the Update button, if you enabled it).
+
+Things to know:
+
+- An **ordinary user** can use the dashboard and nothing else: no Users link, no Update button, and
+  `/admin/*` answers "unauthorized". Give someone the **owner** role (Users, Edit, Roles) only if you trust
+  them with every account.
+- **Switching someone off:** edit the user and untick **Active** (or tick **Expired**). They are signed out on
+  their next request, their 30-day "keep me signed in" cookies stop working, and they cannot sign in again
+  until you switch them back on. **Delete** removes the account and ends its session; their websites and
+  places stay in the database but nobody can reach them.
+- **Forgot a password:** as the owner, edit the user and type a new password. **Locked out:** five wrong
+  passwords lock an account, and the web form cannot unlock it (changing the password there does not reset
+  the count). Run `sudo -u www-data php bin/setup.php --user=name` on the server: it sets a new password,
+  unlocks the account and switches it on. That is also the way back in if the owner is ever locked out or
+  switches themselves off.
+- The Delete button asks for confirmation. There is no undo.
 
 Open the site, sign in, then use the browser's "Add to Home Screen". An installed iPhone app keeps its
 own cookies, so sign in once inside the installed app; the 30-day cookie then applies to it.
