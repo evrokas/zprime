@@ -54,6 +54,7 @@ require_once __DIR__ . '/functional/auth.php';
 require_once __DIR__ . '/functional/dashboard.php';
 require_once __DIR__ . '/functional/weather.php';
 require_once __DIR__ . '/functional/icons.php';
+require_once __DIR__ . '/functional/ordering.php';
 
 // Pure helper checks need no database or server.
 $libRunner = new TestRunner('Helpers (validation, Maps URLs)');
@@ -95,6 +96,10 @@ try {
     $iconRunner = new TestRunner('Website icons');
     zprime_functional_icons($iconRunner, $server->baseUrl(), $site);
     $ok = $iconRunner->run() && $ok;
+
+    $orderRunner = new TestRunner('Ordering websites and places');
+    zprime_functional_ordering($orderRunner, $server->baseUrl());
+    $ok = $orderRunner->run() && $ok;
 } finally {
     $server->stop();
     $stub->stop();

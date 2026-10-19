@@ -220,6 +220,62 @@
     })();
   })();
 
+  /* ---------- reorder: move an item one step earlier / later ---------- */
+  // Keeps the first item's "earlier" and the last item's "later" button disabled.
+  function updateMoveButtons(list) {
+    var items = list.querySelectorAll(':scope > li');
+    Array.prototype.forEach.call(items, function (li, i) {
+      var up = li.querySelector('[data-move="up"]');
+      var down = li.querySelector('[data-move="down"]');
+      if (up) up.disabled = i === 0;
+      if (down) down.disabled = i === items.length - 1;
+    });
+  }
+  function moveStatus(block, text) {
+    var el = block.querySelector('[data-move-status]');
+    if (!el) return;
+    el.textContent = text || '';
+    el.hidden = !text;
+  }
+  document.addEventListener('click', function (ev) {
+    var btn = ev.target.closest('[data-move]');
+    if (!btn || btn.disabled) return;
+    var li = btn.closest('li[data-item-id]');
+    var list = li && li.parentNode;
+    var block = btn.closest('[data-block]');
+    if (!li || !list || !list.hasAttribute('data-move-base')) return;
+    var dir = btn.getAttribute('data-move');
+
+    // Lock the whole list while the request runs, so two quick taps cannot race.
+    var buttons = list.querySelectorAll('[data-move]');
+    Array.prototype.forEach.call(buttons, function (b) { b.disabled = true; });
+    moveStatus(block, '');
+
+    fetch(list.getAttribute('data-move-base') + '/' + encodeURIComponent(li.getAttribute('data-item-id')) + '/move', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'X-CSRF-Token': csrfToken(), 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
+      body: 'dir=' + encodeURIComponent(dir)
+    })
+      .then(function (r) {
+        return r.json().catch(function () { return { ok: false, error: 'The server could not save the new order.' }; })
+          .then(function (j) { if (!r.ok && !j.error) j.error = ICON_ERRORS[r.status]; return j; });
+      })
+      .catch(function () { return { ok: false, error: 'No connection. The order was not changed.' }; })
+      .then(function (res) {
+        if (res.ok) {
+          if (dir === 'up' && li.previousElementSibling) list.insertBefore(li, li.previousElementSibling);
+          if (dir === 'down' && li.nextElementSibling) list.insertBefore(li.nextElementSibling, li);
+        } else {
+          moveStatus(block, res.error || 'The order was not changed.');
+        }
+        updateMoveButtons(list);
+        // keep keyboard focus on a button that still works
+        var again = li.querySelector('[data-move="' + dir + '"]');
+        var other = li.querySelector('[data-move="' + (dir === 'up' ? 'down' : 'up') + '"]');
+        if (again && !again.disabled) again.focus(); else if (other && !other.disabled) other.focus();
+      });
+  });
+
   /* ---------- confirm before removing ---------- */
   document.addEventListener('submit', function (ev) {
     var msg = ev.target.getAttribute && ev.target.getAttribute('data-confirm');

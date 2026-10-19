@@ -7,18 +7,24 @@
         </div>
     </div>
 
+    <p class="move-status" data-move-status role="status" hidden></p>
+
     {% if(!count($places)): %}
         <p class="empty">No places yet. Add home, work or anywhere you drive to, and get directions in one tap.</p>
     {% else: %}
-        <ul class="places">
+        <ul class="places" data-move-base="{{{ $delete_base }}}">
         {% foreach($places as $p): %}
-            <li class="place">
+            <li class="place" data-item-id="{{{ $p['id'] }}}">
                 <div class="place-row">
                     <div class="place-text"><b>{{{ $p['name'] }}}</b><small>{{{ $p['where'] }}}</small></div>
                     <a class="drive" href="{{{ $p['maps_url'] }}}" target="_blank" rel="noopener noreferrer"
                        aria-label="Drive to {{{ $p['name'] }}} in Google Maps">Drive</a>
                 </div>
                 <span class="item-tools">
+                    <span class="move-tools" role="group" aria-label="Order of {{{ $p['name'] }}}">
+                        <button type="button" class="tool tool-move" data-move="up"{% if($p['is_first']): %} disabled{% endif %} aria-label="Move {{{ $p['name'] }}} up">&uarr;</button>
+                        <button type="button" class="tool tool-move" data-move="down"{% if($p['is_last']): %} disabled{% endif %} aria-label="Move {{{ $p['name'] }}} down">&darr;</button>
+                    </span>
                     <button type="button" class="tool" data-open-dialog="place-dialog"
                             data-id="{{{ $p['id'] }}}" data-name="{{{ $p['name'] }}}" data-where="{{{ $p['where'] }}}"
                             aria-label="Edit {{{ $p['name'] }}}">Edit</button>

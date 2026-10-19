@@ -7,17 +7,23 @@
         </div>
     </div>
 
+    <p class="move-status" data-move-status role="status" hidden></p>
+
     {% if(!count($links)): %}
         <p class="empty">No websites yet. Add the sites you open every day.</p>
     {% else: %}
-        <ul class="sites">
+        <ul class="sites" data-move-base="{{{ $delete_base }}}">
         {% foreach($links as $l): %}
-            <li class="site-item" data-link-id="{{{ $l['id'] }}}"{% if($l['needs_icon']): %} data-needs-icon="1"{% endif %}>
+            <li class="site-item" data-item-id="{{{ $l['id'] }}}" data-link-id="{{{ $l['id'] }}}"{% if($l['needs_icon']): %} data-needs-icon="1"{% endif %}>
                 <a class="site" href="{{{ $l['url'] }}}" rel="noopener noreferrer">
                     <i class="fav{% if($l['icon_url'] !== ''): %} fav-icon{% endif %}" style="--h: {{{ $l['hue'] }}}" data-fav data-letter="{{{ $l['initial'] }}}" aria-hidden="true">{% if($l['icon_url'] !== ''): %}<img src="{{{ $l['icon_url'] }}}" alt="" width="24" height="24" loading="lazy">{% else: %}{{{ $l['initial'] }}}{% endif %}</i>
                     <span class="site-text"><b>{{{ $l['title'] }}}</b><small>{{{ $l['label'] }}}</small></span>
                 </a>
                 <span class="item-tools">
+                    <span class="move-tools" role="group" aria-label="Order of {{{ $l['title'] }}}">
+                        <button type="button" class="tool tool-move" data-move="up"{% if($l['is_first']): %} disabled{% endif %} aria-label="Move {{{ $l['title'] }}} earlier">&larr;</button>
+                        <button type="button" class="tool tool-move" data-move="down"{% if($l['is_last']): %} disabled{% endif %} aria-label="Move {{{ $l['title'] }}} later">&rarr;</button>
+                    </span>
                     <button type="button" class="tool" data-open-dialog="link-dialog"
                             data-id="{{{ $l['id'] }}}" data-title="{{{ $l['title'] }}}" data-url="{{{ $l['url'] }}}" data-icon="{{{ $l['icon_url'] }}}"
                             aria-label="Edit {{{ $l['title'] }}}">Edit</button>

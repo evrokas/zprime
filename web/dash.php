@@ -199,3 +199,29 @@ function zprime_link_icon_refresh($params) {
     dashLinksClassEx::storeIcon($uid, $id, $r['bytes'], $r['mime']);
     $reply(200, ['ok' => true, 'icon' => rel_url('/links/' . $id . '/icon') . '?v=' . time()]);
 }
+
+/** Moves one website or place one step earlier ("up") or later ("down") in the user's own list. JSON in, JSON out. */
+function zprime_move_item(string $table, array $params): never {
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-store');
+    $reply = function (int $status, array $body): never {
+        http_response_code($status);
+        echo json_encode($body);
+        exit();
+    };
+
+    if(!csrfClass::verifyRequest()) $reply(403, ['ok' => false, 'error' => 'Your session expired. Reload the page and try again.']);
+    $uid = zprime_current_user_id();
+    if($uid === null) $reply(401, ['ok' => false, 'error' => 'Please sign in again.']);
+
+    $dir = (string)($_POST['dir'] ?? '');
+    if(!in_array($dir, ['up', 'down'], true)) $reply(400, ['ok' => false, 'error' => 'Unknown direction.']);
+
+    if(!dashOrder::move($table, $uid, (int)($params['id'] ?? 0), $dir)) {
+        $reply(404, ['ok' => false, 'error' => 'That item no longer exists.']);
+    }
+    $reply(200, ['ok' => true]);
+}
+
+function zprime_link_move($params) { zprime_move_item('dash_links', $params); }
+function zprime_place_move($params) { zprime_move_item('dash_places', $params); }

@@ -15,7 +15,8 @@ bin/run_tests.sh --functional-only
    websites and places (add, edit, remove, validation, escaping, isolation between two accounts), and
    the weather path (fetch, cache, stale reading, failure back-off) against a local stand-in for Open-Meteo,
    and website icons (discovery, storage, owner-only serving, refresh, the private-address guard) against a
-   local fake website (`tests/lib/icon_site.php`).
+   local fake website (`tests/lib/icon_site.php`), and reordering (one step at a time, duplicate sort values,
+   isolation between accounts).
 
 ## One-time setup
 
