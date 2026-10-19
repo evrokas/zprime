@@ -72,6 +72,22 @@ Things to know:
 Open the site, sign in, then use the browser's "Add to Home Screen". An installed iPhone app keeps its
 own cookies, so sign in once inside the installed app; the 30-day cookie then applies to it.
 
+### Icons
+
+`design/app-icon-source.png` holds the icon twice, large and small. `bin/make_icons.py` (a developer tool;
+needs Python with Pillow and numpy) cuts them out and writes every icon file:
+
+| File | Made from | Used for |
+|---|---|---|
+| `web/assets/icon-512.png`, `icon-192.png` | the large icon | the web app manifest (home-screen icon) |
+| `web/assets/icon-maskable-512.png` | the large icon, on a full-bleed background | Android icon shapes (circle, squircle) |
+| `web/assets/apple-touch-icon.png` | the large icon, square | iPhone/iPad home screen |
+| `web/assets/favicon-32.png`, `favicon-48.png`, `web/favicon.ico` | the **small** icon | browser tabs and bookmarks |
+
+To change the icon, replace the source picture, adjust the two crop boxes at the top of the script if the
+layout changed, and run `python3 bin/make_icons.py`. Phones keep the old icon of an app already on the home
+screen: remove it and add it again.
+
 ### Apache
 
 `deploy/apache-zprime.conf` is a plain-HTTP virtual host (no SSL directives, so `certbot --apache`
@@ -147,7 +163,8 @@ installing.
 ```
 config/            db.php.in, db.test.php.in, site.info.yaml.in, settings.info.yaml (routes, regions, modules)
 sql/               msql.sh and friends used by fw/bin/*.sh
-bin/               setup.php (first account), run_tests.sh
+bin/               setup.php (first account), run_tests.sh, make_icons.py (developer tool)
+design/            the icon source picture
 deploy/            Apache virtual host, zops handlers
 tests/             regression suite (see tests/README.md)
 web/

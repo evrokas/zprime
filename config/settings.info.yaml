@@ -20,7 +20,7 @@ meta:
 
 favicon:
   type: image/png
-  src: assets/icon-192.png
+  src: assets/favicon-32.png
 
 templates:
   - './core/templates/'

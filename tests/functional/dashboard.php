@@ -148,8 +148,13 @@ function zprime_functional_dashboard(TestRunner $runner, string $baseUrl): void 
         assert_equal('Dashboard', json_decode($m['body'], true)['name'] ?? null);
         assert_equal(200, $http->get('/assets/icon-192.png')['status']);
         assert_equal(200, $http->get('/assets/apple-touch-icon.png')['status']);
+        $ico = $http->get('/favicon.ico');
+        assert_equal(200, $ico['status']);
+        assert_equal('image/vnd.microsoft.icon', zprime_icon_mime($ico['body']), '/favicon.ico is not an icon');
+        assert_equal(200, $http->get('/assets/favicon-32.png')['status']);
         $login = $http->get('/login')['body'];
         assert_contains('rel="manifest"', $login);
+        assert_contains('href="/assets/favicon-32.png"', $login, 'the page does not link the favicon');
         assert_contains('viewport-fit=cover', $login);
     });
 }
