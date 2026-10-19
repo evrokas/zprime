@@ -1,6 +1,6 @@
 # ZPrime application configuration (merged over zeusfw + site.info.yaml).
 
-title: ZPrime
+title: Dashboard
 
 tz: "Europe/Athens"
 
