@@ -115,7 +115,7 @@ button { cursor: pointer; }
 .empty { color: var(--text-2); margin: 4px 0 8px; }
 
 ul.sites, ul.places { list-style: none; margin: 0; padding: 0; }
-.sites { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.sites { display: flex; flex-direction: column; gap: 10px; }
 .site-item, .place { position: relative; min-width: 0; }
 .site {
   display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 8px 10px; min-width: 0;
@@ -198,7 +198,6 @@ ul.sites, ul.places { list-style: none; margin: 0; padding: 0; }
   .wx-temp { font-size: 2.8rem; }
   .wrapper:not(.wrapper-bare) .region-main_content { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 20px; align-items: start; }
   .block { padding: 18px 20px; }
-  .sites { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
   .btn:not(.btn-block) { min-height: 38px; }
   .tool { min-height: 34px; }
 }
@@ -208,3 +207,30 @@ ul.sites, ul.places { list-style: none; margin: 0; padding: 0; }
 /* the login form is the only thing on a bare page */
 .wrapper-bare .region-main_content { display: flex; }
 .route-content { min-width: 0; }
+
+/* ---- drag-and-drop handle and dragging state ---- */
+.tool-grip {
+  min-width: 40px; padding: 0; cursor: grab; touch-action: none;   /* touch-action: a finger on the grip drags instead of scrolling */
+  background:
+    linear-gradient(var(--text-2), var(--text-2)) center 13px / 18px 2px no-repeat,
+    linear-gradient(var(--text-2), var(--text-2)) center 19px / 18px 2px no-repeat,
+    linear-gradient(var(--text-2), var(--text-2)) center 25px / 18px 2px no-repeat,
+    var(--surface);
+}
+.tool-grip:active { cursor: grabbing; }
+.sites > li, .places > li { position: relative; }
+.is-dragging-list { user-select: none; -webkit-user-select: none; }
+.drag-item { z-index: 5; box-shadow: 0 8px 22px rgba(0, 0, 0, .28); border-radius: 12px; background: var(--surface); transition: none; }
+.drag-item > .site, .drag-item.place { border-color: var(--primary); }
+
+/* ---- update button result ---- */
+.update-box { display: flex; flex-direction: column; gap: 12px; padding: 18px; }
+.update-box h3 { margin: 0; font: 600 1.15rem var(--font-head); }
+.update-box p { margin: 0; }
+.update-output {
+  margin: 0; padding: 10px 12px; max-height: 40vh; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere;
+  font: 12.5px/1.5 var(--font-mono); background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+}
+.update-hints { margin: 0; padding-left: 20px; }
+.update-hints li { margin: 4px 0; }
+.update-box.is-error [data-update-message] { color: var(--danger); }

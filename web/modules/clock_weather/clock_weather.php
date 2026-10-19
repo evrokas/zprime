@@ -23,6 +23,8 @@ class clockWeatherModule extends moduleClass {
             'weather_url' => rel_url('/api/weather'),
             'display_name' => $account ? ($account->getname() ?: $uname) : (string)$uname,
             'logout_url' => rel_url('/logout'),
+            'can_update' => zprime_can_update(),
+            'update_url' => rel_url('/system/update'),
         ]);
     }
 }

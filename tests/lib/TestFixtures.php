@@ -30,6 +30,24 @@ class TestFixtures {
         }
     }
 
+    // An owner account: its role has is_superuser, which is what the Update button requires.
+    const USER_OWNER = 'zprime_test_owner';
+    const PASS_OWNER = 'test-password-owner-4';
+
+    static function createOwner(): void {
+        TestSchema::assertSafeToMutate();
+        $db = dbConnection::getConnection();
+        $db->exec("INSERT INTO roles (guid, cuser, name, label, is_superuser) VALUES (UUID(), 'test', 'owner', 'Owner', 1)");
+        $roleId = (int)$db->lastInsertId();
+        $u = new usersClass([
+            'name' => 'ZPrime owner', 'email' => 'owner@example.invalid', 'uname' => self::USER_OWNER,
+            'upass' => password_hash(self::PASS_OWNER, PASSWORD_DEFAULT),
+            'active' => 1, 'expired' => 0, 'wrongpasscount' => 0, 'roles' => 'owner',
+        ]);
+        $u->insert();
+        user_rolesClassEx::assignRole((int)$u->getid(), $roleId, 'test');
+    }
+
     static function userId(string $uname): int {
         $st = dbConnection::getConnection()->prepare('SELECT id FROM users WHERE uname = :u');
         $st->execute([':u' => $uname]);

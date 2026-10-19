@@ -4,9 +4,9 @@ A personal home dashboard, built mainly for phones and also laid out for desktop
 the home screen of every device you use.
 
 - **Header:** live clock, date and the temperature at your home location.
-- **Websites:** a grid of favorite sites, each with the site's own icon. Add, edit and remove them. The edit dialog has a **Refresh icon** button.
-- **Ordering:** tap **Edit** on a block and each item gets arrow buttons to move it one step earlier or later
-  (← → for websites, ↑ ↓ for places). The order is saved per account and kept across devices.
+- **Websites:** a vertical list of favorite sites, each with the site's own icon. Add, edit and remove them. The edit dialog has a **Refresh icon** button.
+- **Ordering:** tap **Edit** on a block. Drag an item by its handle (the three-bar button) with a finger or the
+  mouse, or use the ↑ ↓ buttons. The order is saved per account and kept across devices.
 - **Places:** favorite places with a **Drive** button that opens Google Maps driving directions
   (the Maps app on a phone). A place can be a street address, coordinates, or a pasted Google Maps
   link that contains coordinates.
@@ -77,6 +77,33 @@ and every request ends in a 500. If you already hit this: `sudo rm /tmp/fwkernel
 Weather comes from [Open-Meteo](https://open-meteo.com/) (no API key). The server fetches it and caches
 it in `web/cache/`, so many open devices cost one request per interval. If the service is down the last
 reading is shown, and failed fetches are not retried for a minute.
+
+### Update button (git pull)
+
+With `git_pull_button: true` in `config/site.info.yaml`, the owner account sees a small **Update** link in the
+header. It asks for confirmation, then runs `git pull --ff-only` in this installation's folder and shows git's
+output. It never merges or rewrites local work: if the checkout has local commits or edits that conflict, the
+pull is refused and nothing changes. It does not run database changes; if the update touches
+`web/classes/yaml/`, the result says to run `fw/bin/update.sh`.
+
+It is **off by default**, and only an account whose role is a superuser (the `owner` role from
+`bin/setup.php`) can use it; every other account gets 403, and with the setting off the route answers 404.
+Turn it on only if you accept this: whoever can sign in as the owner can make the server pull whatever is on the
+remote branch, so protect that remote and the owner password.
+
+What the server needs before the button can work:
+
+- The web server's user (`www-data` on Debian) must be able to write to the checkout (at least `.git/` and the
+  tracked files), and git must accept the folder: if the checkout belongs to another user git says
+  "dubious ownership"; either own it as `www-data` or run, once,
+  `sudo -u www-data git config --global --add safe.directory /var/www/zprime`.
+- The remote must be reachable without a prompt: an https URL with a stored token
+  (`git config credential.helper store`) or an ssh deploy key without a passphrase, for that same user.
+  Prompts are switched off, so a missing credential fails at once with git's message.
+- The checkout must be on a branch that tracks a remote branch (`git branch -u origin/main`).
+
+The pull has a 60 second limit, one runs at a time, and each request is written to the server's error log.
+The shared ZeusFW folder (`fw`) is a separate checkout and is not touched.
 
 ### Website icons
 

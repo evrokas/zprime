@@ -71,6 +71,12 @@ routes:
     handler: zprime_api_weather
     method: get
     access: authenticated
+  system_update:
+    title: "Update from git"
+    url: "/system/update"
+    handler: zprime_system_update
+    method: post
+    access: authenticated
   link_save:
     title: "Save website"
     url: "/links/save"
@@ -89,6 +95,12 @@ routes:
     handler: zprime_link_icon_refresh
     method: post
     access: authenticated
+  link_order:
+    title: "Order websites"
+    url: "/links/order"
+    handler: zprime_link_order
+    method: post
+    access: authenticated
   link_move:
     title: "Move website"
     url: "/links/{id}/move"
@@ -105,6 +117,12 @@ routes:
     title: "Save place"
     url: "/places/save"
     handler: zprime_place_save
+    method: post
+    access: authenticated
+  place_order:
+    title: "Order places"
+    url: "/places/order"
+    handler: zprime_place_order
     method: post
     access: authenticated
   place_move:

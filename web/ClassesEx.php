@@ -223,4 +223,50 @@ class dashOrder {
             return false;
         }
     }
+
+    /**
+     * Puts the user's items in the order given by $ids (as set by drag-and-drop). Ids that are not the
+     * user's, and repeats, are ignored; the user's items missing from $ids keep their current order after
+     * the listed ones, so a stale page (an item added or removed elsewhere) can never lose or foreign-write
+     * anything. Renumbers 0..n-1.
+     *
+     * @param int[] $ids
+     * @return bool false only when the arguments or the database fail
+     */
+    static function setOrder(string $table, int $userId, array $ids): bool {
+        if(!in_array($table, self::TABLES, true)) return false;
+
+        $pdo = dbConnection::getConnection();
+        $pdo->beginTransaction();
+        try {
+            $st = $pdo->prepare("SELECT id FROM `$table` WHERE user_id=:uid ORDER BY sort_order, id FOR UPDATE");
+            $st->bindValue(':uid', $userId, PDO::PARAM_INT);
+            $st->execute();
+            $owned = array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN));
+            $ownedSet = array_flip($owned);
+
+            $new = [];
+            foreach($ids as $id) {
+                $id = (int)$id;
+                if(isset($ownedSet[$id]) && !in_array($id, $new, true)) $new[] = $id;
+            }
+            foreach($owned as $id) {
+                if(!in_array($id, $new, true)) $new[] = $id;
+            }
+
+            $upd = $pdo->prepare("UPDATE `$table` SET sort_order=:pos WHERE id=:id AND user_id=:uid");
+            foreach($new as $pos => $rowId) {
+                $upd->bindValue(':pos', $pos, PDO::PARAM_INT);
+                $upd->bindValue(':id', $rowId, PDO::PARAM_INT);
+                $upd->bindValue(':uid', $userId, PDO::PARAM_INT);
+                $upd->execute();
+            }
+            $pdo->commit();
+            return true;
+        } catch(\Throwable $e) {
+            if($pdo->inTransaction()) $pdo->rollBack();
+            error_log('dashOrder::setOrder failed: ' . $e->getMessage());
+            return false;
+        }
+    }
 }

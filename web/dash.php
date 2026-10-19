@@ -225,3 +225,80 @@ function zprime_move_item(string $table, array $params): never {
 
 function zprime_link_move($params) { zprime_move_item('dash_links', $params); }
 function zprime_place_move($params) { zprime_move_item('dash_places', $params); }
+
+/** Sets a whole list order at once (drag-and-drop). Body: ids=3,1,2 (the item ids, top to bottom). */
+function zprime_order_items(string $table): never {
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-store');
+    $reply = function (int $status, array $body): never {
+        http_response_code($status);
+        echo json_encode($body);
+        exit();
+    };
+
+    if(!csrfClass::verifyRequest()) $reply(403, ['ok' => false, 'error' => 'Your session expired. Reload the page and try again.']);
+    $uid = zprime_current_user_id();
+    if($uid === null) $reply(401, ['ok' => false, 'error' => 'Please sign in again.']);
+
+    $raw = (string)($_POST['ids'] ?? '');
+    if($raw === '' || strlen($raw) > 5000 || !preg_match('/^\d+(,\d+)*$/', $raw)) {
+        $reply(400, ['ok' => false, 'error' => 'The new order was not understood.']);
+    }
+    $ids = array_slice(array_map('intval', explode(',', $raw)), 0, 500);
+
+    if(!dashOrder::setOrder($table, $uid, $ids)) $reply(500, ['ok' => false, 'error' => 'The new order could not be saved.']);
+    $reply(200, ['ok' => true]);
+}
+
+function zprime_link_order($params) { zprime_order_items('dash_links'); }
+function zprime_place_order($params) { zprime_order_items('dash_places'); }
+
+/* ----- "Update" button: git pull ----- */
+
+/** Off unless config/site.info.yaml says `git_pull_button: true` (or the test suite's env switch is set). */
+function zprime_git_pull_enabled(): bool {
+    if(getenv('ZPRIME_GIT_PULL_BUTTON') === '1') return true;
+    global $kernel;
+    $v = isset($kernel) ? ($kernel->getConfig()['git_pull_button'] ?? false) : false;
+    if(is_array($v)) $v = end($v);
+    return filter_var($v, FILTER_VALIDATE_BOOLEAN);
+}
+
+/** The checkout to update: this application's own folder, unless the deployer or the test suite names another. */
+function zprime_update_dir(): string {
+    $dir = getenv('ZPRIME_UPDATE_DIR');
+    return ($dir !== false && $dir !== '') ? $dir : (defined('__APPDIR__') ? __APPDIR__ : dirname(__DIR__));
+}
+
+/** Whether the signed-in user may see and use the Update button: feature on, and an is_superuser (owner) account. */
+function zprime_can_update(): bool {
+    return zprime_git_pull_enabled() && class_exists('rbacClass') && rbacClass::currentUserIsSuperuser();
+}
+
+function zprime_system_update($params) {
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-store');
+    $reply = function (int $status, array $body): never {
+        http_response_code($status);
+        echo json_encode($body);
+        exit();
+    };
+
+    // Feature off: answer exactly like a route that does not exist.
+    if(!zprime_git_pull_enabled()) $reply(404, ['ok' => false, 'error' => 'Not found.']);
+    if(!csrfClass::verifyRequest()) $reply(403, ['ok' => false, 'error' => 'Your session expired. Reload the page and try again.']);
+    global $kernel;
+    if(!$kernel->getUserName()) $reply(401, ['ok' => false, 'error' => 'Please sign in again.']);
+    if(!rbacClass::currentUserIsSuperuser()) $reply(403, ['ok' => false, 'error' => 'Only the owner account can update the dashboard.']);
+
+    $r = zprime_git_pull(zprime_update_dir());
+    error_log('git pull requested by ' . $kernel->getUserName() . ': ' . ($r['ok'] ? 'ok' : 'failed') . ($r['error'] ? ' (' . $r['error'] . ')' : ''));
+    $reply(200, [
+        'ok' => $r['ok'],
+        'error' => $r['error'],
+        'output' => $r['output'],
+        'updated' => $r['ok'] && $r['before'] !== $r['after'],
+        'changed' => $r['changed'],
+        'hints' => $r['hints'],
+    ]);
+}

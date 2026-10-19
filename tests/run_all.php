@@ -55,6 +55,7 @@ require_once __DIR__ . '/functional/dashboard.php';
 require_once __DIR__ . '/functional/weather.php';
 require_once __DIR__ . '/functional/icons.php';
 require_once __DIR__ . '/functional/ordering.php';
+require_once __DIR__ . '/functional/update.php';
 
 // Pure helper checks need no database or server.
 $libRunner = new TestRunner('Helpers (validation, Maps URLs)');
@@ -64,6 +65,7 @@ $ok = $libRunner->run() && $ok;
 // Fresh database + two accounts, every run.
 TestSchema::reset();
 TestFixtures::createUsers();
+TestFixtures::createOwner();
 
 // A stand-in for Open-Meteo, so the weather path is tested without the
 // internet. The app under test reads its address from this variable.
@@ -77,8 +79,13 @@ putenv('ZPRIME_WEATHER_URL=' . $stub->url());
 $site = new IconSite();
 $site->start();
 
-$server = new TestServer();
+// A throwaway git remote and checkout for the Update button. The main test server has the button switched
+// on and pointed at that checkout; a second server (the same app, default settings) proves it is off by default.
+$git = new GitSandbox();
+$server = new TestServer('127.0.0.1', 8781, ['ZPRIME_GIT_PULL_BUTTON' => '1', 'ZPRIME_UPDATE_DIR' => $git->server]);
 $server->start();
+$serverOff = new TestServer('127.0.0.1', 8786, ['ZPRIME_UPDATE_DIR' => $git->server]);
+$serverOff->start();
 
 try {
     $authRunner = new TestRunner('Login, remember-me and CSRF');
@@ -100,7 +107,17 @@ try {
     $orderRunner = new TestRunner('Ordering websites and places');
     zprime_functional_ordering($orderRunner, $server->baseUrl());
     $ok = $orderRunner->run() && $ok;
+
+    $gitRunner = new TestRunner('Update button: git pull');
+    zprime_functional_git_pull($gitRunner, $git);
+    $ok = $gitRunner->run() && $ok;
+
+    $updRunner = new TestRunner('Update button over HTTP');
+    zprime_functional_update_http($updRunner, $server->baseUrl(), $serverOff->baseUrl(), $git);
+    $ok = $updRunner->run() && $ok;
 } finally {
+    $serverOff->stop();
+    $git->destroy();
     $server->stop();
     $stub->stop();
     $site->stop();

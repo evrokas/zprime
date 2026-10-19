@@ -30,4 +30,9 @@ temperature_unit: celsius
 # Status file written by this site's zops backup handler (see deploy/).
 # zops_backup_status_file: /var/lib/zops/zprime-backup-status.json
 
+# Show an "Update" button (owner account only) that runs `git pull --ff-only` in
+# this installation's folder. Off by default: it needs the web server's user to
+# be able to write to the checkout and to reach the git remote (see README.md).
+git_pull_button: false
+
 disabled_packages: []

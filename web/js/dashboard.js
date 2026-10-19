@@ -276,6 +276,190 @@
       });
   });
 
+  /* ---------- reorder: drag and drop (mouse and touch) ---------- */
+  // Press a grip, drag the row up or down, release. The row follows the pointer; when it passes
+  // the middle of a neighbour the two swap. The finished order is sent to the server in one go.
+  // Works with Pointer Events, so one code path serves mouse, pen and finger.
+  var drag = null;
+
+  function itemIds(list) {
+    return Array.prototype.map.call(list.querySelectorAll(':scope > li[data-item-id]'), function (li) {
+      return li.getAttribute('data-item-id');
+    });
+  }
+  function dragUpdate() {
+    if (!drag) return;
+    var li = drag.li, list = drag.list;
+    var dy = drag.lastY - drag.startY;
+    li.style.transform = 'translateY(' + dy + 'px)';
+
+    var swapped = true;
+    while (swapped) {                                    // a fast drag can pass several rows at once
+      swapped = false;
+      var box = li.getBoundingClientRect();
+      var centre = box.top + box.height / 2;
+      var prev = li.previousElementSibling, next = li.nextElementSibling;
+      var target = null, before = false;
+      if (prev) {
+        var pb = prev.getBoundingClientRect();
+        if (centre < pb.top + pb.height / 2) { target = prev; before = true; }
+      }
+      if (!target && next) {
+        var nb = next.getBoundingClientRect();
+        if (centre > nb.top + nb.height / 2) { target = next; before = false; }
+      }
+      if (target) {
+        var visualTop = box.top;
+        if (before) list.insertBefore(li, target); else list.insertBefore(target, li);
+        // the row's layout position moved; re-aim the transform so it stays under the pointer
+        var now = li.getBoundingClientRect().top;
+        drag.startY += now - visualTop;
+        dy = drag.lastY - drag.startY;
+        li.style.transform = 'translateY(' + dy + 'px)';
+        swapped = true;
+      }
+    }
+  }
+  function dragAutoscroll() {
+    if (!drag) return;
+    var edge = 70, speed = 0;
+    if (drag.lastClientY < edge) speed = -Math.ceil((edge - drag.lastClientY) / 6);
+    else if (window.innerHeight - drag.lastClientY < edge) speed = Math.ceil((edge - (window.innerHeight - drag.lastClientY)) / 6);
+    if (speed) {
+      window.scrollBy(0, speed);
+      drag.startY -= speed;                              // the page moved under the pointer
+      dragUpdate();
+    }
+    drag.raf = requestAnimationFrame(dragAutoscroll);
+  }
+  function dragEnd(ev, cancelled) {
+    if (!drag || (ev && ev.pointerId !== drag.pointerId)) return;
+    var d = drag; drag = null;
+    cancelAnimationFrame(d.raf);
+    try { d.handle.releasePointerCapture(d.pointerId); } catch (e) { /* already released */ }
+    d.li.style.transform = '';
+    d.li.classList.remove('drag-item');
+    d.list.classList.remove('is-dragging-list');
+    var ids = itemIds(d.list);
+    var changed = ids.join(',') !== d.before.join(',');
+    updateMoveButtons(d.list);
+    if (!changed || cancelled) {
+      if (cancelled && changed) restoreOrder(d.list, d.before);
+      return;
+    }
+    var block = d.list.closest('[data-block]');
+    moveStatus(block, '');
+    fetch(d.list.getAttribute('data-move-base') + '/order', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'X-CSRF-Token': csrfToken(), 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
+      body: 'ids=' + encodeURIComponent(ids.join(','))
+    })
+      .then(function (r) {
+        return r.json().catch(function () { return { ok: false, error: 'The server could not save the new order.' }; })
+          .then(function (j) { if (!r.ok && !j.error) j.error = ICON_ERRORS[r.status]; return j; });
+      })
+      .catch(function () { return { ok: false, error: 'No connection. The order was not changed.' }; })
+      .then(function (res) {
+        if (!res.ok) {
+          restoreOrder(d.list, d.before);
+          moveStatus(block, res.error || 'The order was not changed.');
+        }
+      });
+  }
+  // Puts the rows back in a previous order (the save failed or the drag was cancelled).
+  function restoreOrder(list, ids) {
+    ids.forEach(function (id) {
+      var li = list.querySelector(':scope > li[data-item-id="' + id + '"]');
+      if (li) list.appendChild(li);
+    });
+    updateMoveButtons(list);
+  }
+  document.addEventListener('pointerdown', function (ev) {
+    var handle = ev.target.closest('[data-drag-handle]');
+    if (!handle || drag) return;
+    if (ev.pointerType === 'mouse' && ev.button !== 0) return;
+    var li = handle.closest('li[data-item-id]');
+    var list = li && li.parentNode;
+    if (!li || !list || !list.hasAttribute('data-move-base')) return;
+    ev.preventDefault();
+    drag = {
+      li: li, list: list, handle: handle, pointerId: ev.pointerId,
+      startY: ev.clientY, lastY: ev.clientY, lastClientY: ev.clientY,
+      before: itemIds(list), raf: 0
+    };
+    try { handle.setPointerCapture(ev.pointerId); } catch (e) { /* not supported: moves still arrive */ }
+    li.classList.add('drag-item');
+    list.classList.add('is-dragging-list');
+    moveStatus(list.closest('[data-block]'), '');
+    drag.raf = requestAnimationFrame(dragAutoscroll);
+  });
+  document.addEventListener('pointermove', function (ev) {
+    if (!drag || ev.pointerId !== drag.pointerId) return;
+    drag.lastY = ev.clientY;
+    drag.lastClientY = ev.clientY;
+    dragUpdate();
+  });
+  document.addEventListener('pointerup', function (ev) { dragEnd(ev, false); });
+  document.addEventListener('pointercancel', function (ev) { dragEnd(ev, true); });
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape' && drag) dragEnd({ pointerId: drag.pointerId }, true);
+  });
+
+  /* ---------- the Update button: git pull on the server ---------- */
+  document.addEventListener('click', function (ev) {
+    var btn = ev.target.closest('[data-git-pull]');
+    if (!btn) return;
+    var dlg = document.getElementById('update-dialog');
+    if (!dlg) return;
+    if (!window.confirm('Pull the latest version from git onto the server now?')) return;
+
+    var box = dlg.querySelector('.update-box');
+    var msg = dlg.querySelector('[data-update-message]');
+    var out = dlg.querySelector('[data-update-output]');
+    var hints = dlg.querySelector('[data-update-hints]');
+    var reload = dlg.querySelector('[data-update-reload]');
+    var title = dlg.querySelector('[data-update-title]');
+    var finish = function (isError, heading, text, output, hintList, canReload) {
+      btn.disabled = false;
+      box.classList.toggle('is-error', isError);
+      title.textContent = heading;
+      msg.textContent = text;
+      out.textContent = output || '';
+      out.hidden = !output;
+      hints.textContent = '';
+      (hintList || []).forEach(function (h) { var li = document.createElement('li'); li.textContent = h; hints.appendChild(li); });
+      hints.hidden = !(hintList && hintList.length);
+      reload.hidden = !canReload;
+    };
+
+    btn.disabled = true;
+    finish(false, 'Updating\u2026', 'Asking git for the latest version. This can take a few seconds.', '', [], false);
+    if (typeof dlg.showModal === 'function' && !dlg.open) dlg.showModal();
+
+    fetch(dlg.getAttribute('data-update-url'), {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'X-CSRF-Token': csrfToken(), Accept: 'application/json' }
+    })
+      .then(function (r) {
+        return r.json().catch(function () { return { ok: false, error: 'The server could not run the update.' }; })
+          .then(function (j) { if (!r.ok && !j.error) j.error = ICON_ERRORS[r.status]; return j; });
+      })
+      .catch(function () { return { ok: false, error: 'No connection. Nothing was changed.' }; })
+      .then(function (res) {
+        if (!res.ok) {
+          finish(true, 'Update failed', res.error || 'The update failed.', res.output, res.hints, false);
+        } else if (res.updated) {
+          var n = (res.changed || []).length;
+          finish(false, 'Updated', 'New version pulled (' + n + ' file' + (n === 1 ? '' : 's') + ' changed).', res.output, res.hints, true);
+        } else {
+          finish(false, 'Already up to date', 'Nothing new to pull.', '', res.hints, false);
+        }
+      });
+  });
+  document.addEventListener('click', function (ev) {
+    if (ev.target.closest('[data-update-reload]')) window.location.reload();
+  });
+
   /* ---------- confirm before removing ---------- */
   document.addEventListener('submit', function (ev) {
     var msg = ev.target.getAttribute && ev.target.getAttribute('data-confirm');

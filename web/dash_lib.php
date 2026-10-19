@@ -496,3 +496,123 @@ function zprime_favicon_fetch(string $pageUrl): array {
         ? 'No icon was found on that site.'
         : 'The site could not be reached.'];
 }
+
+/* ---------------------------------------------------------------------
+ * Update from git (the "Update" button)
+ *
+ * Runs `git pull --ff-only` in the application's own checkout. The command
+ * line is fixed (nothing a visitor types reaches it), a fast-forward-only
+ * pull never merges or rewrites local work, prompts for credentials are
+ * switched off so it cannot hang, and it is killed after a timeout. Only
+ * one update runs at a time.
+ * ------------------------------------------------------------------- */
+
+/**
+ * Runs one git command in $dir. stderr is merged into the output.
+ *
+ * @return array{exit:int, output:string, timed_out:bool}
+ */
+function zprime_git_run(string $dir, array $args, int $timeoutSeconds): array {
+    $home = sys_get_temp_dir();
+    $env = [
+        'PATH' => '/usr/local/bin:/usr/bin:/bin',
+        'HOME' => $home,
+        'LANG' => 'C',
+        'LC_ALL' => 'C',
+        'GIT_TERMINAL_PROMPT' => '0',                      // never wait for a username/password
+        'GIT_SSH_COMMAND' => 'ssh -o BatchMode=yes',       // never wait for an ssh passphrase
+    ];
+    // Tests point git at an empty global config so a developer's own settings cannot change the result.
+    if(($extra = getenv('GIT_CONFIG_GLOBAL')) !== false) $env['GIT_CONFIG_GLOBAL'] = $extra;
+
+    $proc = proc_open(array_merge(['git', '-C', $dir], $args),
+        [0 => ['file', '/dev/null', 'r'], 1 => ['pipe', 'w'], 2 => ['redirect', 1]], $pipes, null, $env);
+    if(!is_resource($proc)) return ['exit' => 127, 'output' => 'git could not be started.', 'timed_out' => false];
+
+    stream_set_blocking($pipes[1], false);
+    $out = '';
+    $timedOut = false;
+    $deadline = microtime(true) + $timeoutSeconds;
+    while(true) {
+        $chunk = stream_get_contents($pipes[1]);
+        if($chunk !== false && $chunk !== '') $out .= $chunk;
+        $st = proc_get_status($proc);
+        if(!$st['running']) break;
+        if(microtime(true) > $deadline) {
+            $timedOut = true;
+            proc_terminate($proc, 9);
+            break;
+        }
+        $r = [$pipes[1]]; $w = null; $e = null;
+        stream_select($r, $w, $e, 0, 200000);
+    }
+    $out .= (string)stream_get_contents($pipes[1]);
+    fclose($pipes[1]);
+    $exit = proc_close($proc);
+    if(isset($st) && !$st['running'] && $st['exitcode'] >= 0) $exit = $st['exitcode'];
+    return ['exit' => $timedOut ? 124 : $exit, 'output' => $out, 'timed_out' => $timedOut];
+}
+
+/**
+ * Pulls the latest commits into the checkout at $dir.
+ *
+ * @return array{ok:bool, output:string, before:?string, after:?string, changed:string[], hints:string[], error:?string}
+ */
+function zprime_git_pull(string $dir, int $timeoutSeconds = 60): array {
+    $res = ['ok' => false, 'output' => '', 'before' => null, 'after' => null, 'changed' => [], 'hints' => [], 'error' => null];
+
+    if(!is_dir($dir) || (!is_dir($dir . '/.git') && !is_file($dir . '/.git'))) {
+        $res['error'] = 'This installation is not a git checkout, so there is nothing to pull.';
+        return $res;
+    }
+
+    $lock = @fopen(sys_get_temp_dir() . '/zprime-git-pull-' . md5($dir) . '.lock', 'c');
+    if($lock === false || !flock($lock, LOCK_EX | LOCK_NB)) {
+        $res['error'] = 'An update is already running. Try again in a minute.';
+        return $res;
+    }
+
+    try {
+        $head = zprime_git_run($dir, ['rev-parse', 'HEAD'], 10);
+        $before = $head['exit'] === 0 ? trim($head['output']) : null;
+        $res['before'] = $before;
+
+        $pull = zprime_git_run($dir, ['pull', '--ff-only'], $timeoutSeconds);
+        $res['output'] = substr(trim($pull['output']), 0, 8000);
+        if($pull['timed_out']) {
+            $res['error'] = 'The update took longer than ' . $timeoutSeconds . ' seconds and was stopped.';
+            return $res;
+        }
+        if($pull['exit'] !== 0) {
+            $res['error'] = 'git could not update this installation. Details below.';
+            return $res;
+        }
+
+        $after = zprime_git_run($dir, ['rev-parse', 'HEAD'], 10);
+        $res['after'] = $after['exit'] === 0 ? trim($after['output']) : null;
+        $res['ok'] = true;
+
+        if($before !== null && $res['after'] !== null && $before !== $res['after']) {
+            $diff = zprime_git_run($dir, ['diff', '--name-only', $before, $res['after']], 10);
+            if($diff['exit'] === 0) {
+                $res['changed'] = array_slice(array_values(array_filter(array_map('trim', explode("\n", $diff['output'])))), 0, 200);
+            }
+            foreach($res['changed'] as $f) {
+                if(strpos($f, 'web/classes/yaml/') === 0) {
+                    $res['hints'][] = 'The database tables changed. Run fw/bin/update.sh and apply the proposed ALTER statements.';
+                    break;
+                }
+            }
+            if(in_array('config/site.info.yaml.in', $res['changed'], true)) {
+                $res['hints'][] = 'config/site.info.yaml.in changed. Check whether your config/site.info.yaml needs a new setting.';
+            }
+            if(in_array('deploy/apache-zprime.conf', $res['changed'], true)) {
+                $res['hints'][] = 'The Apache virtual host template changed. Apply it by hand if you want the change.';
+            }
+        }
+        return $res;
+    } finally {
+        flock($lock, LOCK_UN);
+        fclose($lock);
+    }
+}

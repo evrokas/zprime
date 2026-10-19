@@ -153,7 +153,84 @@ function zprime_functional_ordering(TestRunner $runner, string $baseUrl): void {
         assert_contains('class="sites" data-move-base="/links"', $html);
         assert_contains('class="places" data-move-base="/places"', $html);
         assert_contains('data-move-status', $html);
-        assert_true((bool)preg_match('/aria-label="Move One earlier"/', $html));
+        assert_true((bool)preg_match('/aria-label="Move One up"/', $html));
         assert_true((bool)preg_match('/aria-label="Move Hospital up"/', $html));
+    });
+
+    // ---------- whole-list order (drag and drop) ----------
+    $setOrder = function (TestHttpClient $c, string $kind, string $ids, bool $withToken = true) use ($token): array {
+        $headers = $withToken ? ['X-CSRF-Token' => $token($c)] : [];
+        $res = $c->postWithHeaders("/$kind/order", ['ids' => $ids], $headers);
+        $res['json'] = json_decode($res['body'], true);
+        return $res;
+    };
+
+    $runner->add('drag and drop: the posted order becomes the saved order', function () use ($setOrder, $a, $ids, $order, $idA, $shownOrder) {
+        $by = $ids('dash_links', $idA, 'title');
+        $want = ['Four', 'Two', 'One', 'Three'];
+        $res = $setOrder($a, 'links', implode(',', array_map(fn($t) => $by[$t], $want)));
+        assert_equal(200, $res['status']);
+        assert_true($res['json']['ok']);
+        assert_equal($want, $order('dash_links', $idA));
+        assert_equal(array_map(fn($t) => (int)$by[$t], $want), $shownOrder($a, 'site-item'));
+    });
+
+    $runner->add('drag and drop works for places too', function () use ($setOrder, $a, $ids, $order, $idA) {
+        $by = $ids('dash_places', $idA, 'name');
+        $want = ['Clinic', 'Hospital', 'Home'];
+        assert_true($setOrder($a, 'places', implode(',', array_map(fn($n) => $by[$n], $want)))['json']['ok']);
+        assert_equal($want, $order('dash_places', $idA));
+    });
+
+    $runner->add('a partial list puts those first and keeps the others in their old order after them', function () use ($setOrder, $a, $ids, $order, $idA) {
+        $before = $order('dash_links', $idA);                       // Four, Two, One, Three
+        $by = $ids('dash_links', $idA, 'title');
+        $setOrder($a, 'links', $by['One'] . ',' . $by['Three']);
+        assert_equal(['One', 'Three', 'Four', 'Two'], $order('dash_links', $idA), 'before was ' . implode(',', $before));
+    });
+
+    $runner->add('foreign, unknown and repeated ids are ignored, and nothing is lost', function () use ($setOrder, $a, $ids, $order, $idA, $idB) {
+        $by = $ids('dash_links', $idA, 'title');
+        $bId = (int)zprime_db_rows('SELECT id FROM dash_links WHERE user_id = ? LIMIT 1', [$idB])[0]['id'];
+        $bOrderBefore = $order('dash_links', $idB);
+        $res = $setOrder($a, 'links', implode(',', [$bId, 99999999, $by['Two'], $by['Two'], $by['One']]));
+        assert_equal(200, $res['status']);
+        $now = $order('dash_links', $idA);
+        // listed ids first (once each), then the rest in their previous order: One, Three, Four, Two -> Three, Four
+        assert_equal(['Two', 'One', 'Three', 'Four'], $now);
+        assert_equal(4, count($now), 'an item was lost or duplicated');
+        assert_equal($bOrderBefore, $order('dash_links', $idB), "another account's list was touched");
+        assert_equal(1, count(zprime_db_rows('SELECT id FROM dash_links WHERE id = ?', [$bId])), "another account's item vanished");
+    });
+
+    $runner->add('another account cannot reorder mine by posting my ids', function () use ($setOrder, $b, $ids, $order, $idA) {
+        $by = $ids('dash_links', $idA, 'title');
+        $before = $order('dash_links', $idA);
+        $setOrder($b, 'links', implode(',', array_reverse(array_values($by))));
+        assert_equal($before, $order('dash_links', $idA));
+    });
+
+    $runner->add('the order endpoint needs the token, a sign-in and a well-formed list', function () use ($setOrder, $a, $baseUrl, $ids, $idA, $order) {
+        $before = $order('dash_links', $idA);
+        $by = $ids('dash_links', $idA, 'title');
+        $list = implode(',', array_values($by));
+        assert_equal(403, $setOrder($a, 'links', $list, false)['status']);
+        foreach (['', 'abc', '1,,2', '1;2', '-1,2', '1,2,x', str_repeat('1,', 3000) . '1'] as $bad) {
+            assert_equal(400, $setOrder($a, 'links', $bad)['status'], "accepted: $bad");
+        }
+        $anon = new TestHttpClient($baseUrl);
+        assert_contains('/login', (string)$anon->post('/links/order', ['ids' => $list])['location']);
+        assert_contains('/login', (string)$anon->post('/places/order', ['ids' => $list])['location']);
+        assert_equal($before, $order('dash_links', $idA));
+    });
+
+    $runner->add('the lists are vertical and carry a drag handle on every item', function () use ($a) {
+        $html = $a->get('/')['body'];
+        assert_equal(substr_count($html, 'class="site-item"'), substr_count($html, 'data-drag-handle') - substr_count($html, 'class="place"'),
+            'a website or place has no drag handle');
+        assert_contains('data-drag-handle', $html);
+        $css = (string)file_get_contents(ZPRIME_TEST_APPDIR . '/web/css/dashboard.css');
+        assert_true((bool)preg_match('/\.sites\s*\{[^}]*flex-direction:\s*column/', $css), 'the websites list is not a single column');
+        assert_false((bool)preg_match('/\.sites\s*\{[^}]*grid-template-columns/', $css), 'the websites list is still a grid');
     });
 }
