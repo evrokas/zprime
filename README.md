@@ -41,6 +41,26 @@ account. Run it again to reset a password or unlock an account. The owner role a
 Open the site, sign in, then use the browser's "Add to Home Screen". An installed iPhone app keeps its
 own cookies, so sign in once inside the installed app; the 30-day cookie then applies to it.
 
+### Apache
+
+`deploy/apache-zprime.conf` is a plain-HTTP virtual host (no SSL directives, so `certbot --apache`
+can add them later). Edit the hostnames and the `/var/www/zprime` paths, then:
+
+```sh
+sudo a2enmod rewrite headers expires
+sudo cp deploy/apache-zprime.conf /etc/apache2/sites-available/zprime.conf
+sudo a2ensite zprime && sudo apache2ctl configtest && sudo systemctl reload apache2
+sudo certbot --apache -d dash.example.com      # once the hostname points here
+```
+
+It serves only `web/`, lets only `index.php` run, and refuses `web/core/**/*.php`, YAML and SQL, plus
+`classes/`, `cache/`, `files/` and dotfiles. List extra hostnames as `ServerAlias` (and pass each to
+certbot). The user Apache runs as (`www-data` on Debian) must be able to write `web/cache` and `web/files`.
+
+**Run command-line scripts as the web user**, for example `sudo -u www-data php bin/setup.php ...`.
+ZeusFW appends to `/tmp/fwkernel.log`; if root creates that file first, `www-data` cannot open it
+and every request ends in a 500. If you already hit this: `sudo rm /tmp/fwkernel.log`.
+
 ### Configuration
 
 `config/site.info.yaml` (see the `.in` template for comments):
@@ -76,7 +96,7 @@ installing.
 config/            db.php.in, db.test.php.in, site.info.yaml.in, settings.info.yaml (routes, regions, modules)
 sql/               msql.sh and friends used by fw/bin/*.sh
 bin/               setup.php (first account), run_tests.sh
-deploy/            zops handlers
+deploy/            Apache virtual host, zops handlers
 tests/             regression suite (see tests/README.md)
 web/
   index.php        boots ZeusFW: new Kernel(...)->boot([...])
