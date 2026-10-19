@@ -18,7 +18,9 @@ bin/run_tests.sh --functional-only
    local fake website (`tests/lib/icon_site.php`), and reordering (one step at a time, duplicate sort values,
    whole-list drag-and-drop ordering (the order endpoint), isolation between accounts), and the Update button (real temporary git
    repositories: fast-forward, diverged, conflicting edits, unreachable remote, locking; then the HTTP gates:
-   feature switch, sign-in, CSRF, owner only).
+   feature switch, sign-in, CSRF, owner only), and adding users (the web form and bin/setup.php: an account
+   with no role signs in as an ordinary user, owner-only screens, switching accounts off or deleting them ends
+   open sessions and 30-day cookies).
 
 ## One-time setup
 

@@ -155,3 +155,13 @@ modules:
     - clock_weather
     - favorite_links
     - favorite_places
+
+# The two dashboard blocks belong to the home page only. Without this they also appear under every
+# other page that uses the main content region (for example /admin/users).
+modconf:
+  favorite_links:
+    display:
+      homepage: {}
+  favorite_places:
+    display:
+      homepage: {}

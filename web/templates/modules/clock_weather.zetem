@@ -13,6 +13,7 @@
     <div class="userbar">
         <span class="who">{{{ $display_name }}}</span>
         <span class="actions">
+            {% if($can_manage_users): %}<a href="{{{ $users_url }}}">Users</a>{% endif %}
             {% if($can_update): %}<button type="button" class="linklike" data-git-pull aria-label="Update the dashboard from git">Update</button>{% endif %}
             <button type="button" class="linklike" data-theme-toggle aria-label="Change colour theme">Theme</button>
             <a href="{{{ $logout_url }}}">Sign out</a>

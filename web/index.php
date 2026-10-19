@@ -18,6 +18,11 @@ ini_set('session.gc_maxlifetime', 3600);
 
 $kernel = new Kernel($_SERVER, "../config");
 
+// The Active / Expired boxes on /admin/users must mean something: an account that is not active, or has
+// expired, cannot sign in with its password. (Accounts made by bin/setup.php or the Add form with
+// Active ticked are fine; see also zeusfw_app_boot() in dash.php for sessions that already exist.)
+LoginSecurityClass::enableAccountStatusEnforcement();
+
 $kernel->boot([
     'csrf_login' => true,
     'csrf_webforms' => true,

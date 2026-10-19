@@ -1,10 +1,15 @@
 #!/usr/bin/env php
 <?php
 /*
- * Creates ZPrime's owner role and an account, or resets an account's
- * password. CLI only. Safe to re-run: an existing role/account is reused.
+ * Creates an account, or resets an account's password. CLI only. Safe to re-run.
  *
  *   php bin/setup.php --user=evangelos --name="Evangelos Rokas" --email=me@example.com
+ *   php bin/setup.php --user=maria --name="Maria"               # another, ordinary account
+ *   php bin/setup.php --user=maria --owner                      # also make Maria an owner
+ *
+ * The first account ever created becomes the owner (the is_superuser role that can use
+ * /admin/users and, if enabled, the Update button). Later accounts are ordinary users
+ * unless --owner is given, so adding people never hands out owner rights by accident.
  *
  * The password is asked for without echo. For automation (tests) it can be
  * given in the ZPRIME_PASSWORD environment variable instead; it is never
@@ -23,7 +28,7 @@ if (PHP_SAPI !== 'cli') {
     exit(1);
 }
 
-$opt = getopt('', ['user:', 'name:', 'email:']);
+$opt = getopt('', ['user:', 'name:', 'email:', 'owner']);
 $uname = (string)($opt['user'] ?? '');
 if (!preg_match('/^[A-Za-z0-9._-]{2,32}$/', $uname)) {
     fwrite(STDERR, "Usage: php bin/setup.php --user=<2-32 letters/digits/._-> [--name=\"Full Name\"] [--email=you@example.com]\n");
@@ -70,6 +75,10 @@ ob_end_clean();
 $kernel = new Kernel(['MAKER_INVOKE' => true, 'PHP_SELF' => __FILE__, 'SCRIPT_FILENAME' => __FILE__], __APPDIR__ . '/config');
 $db = dbConnection::getConnection();
 
+// Is there an owner already? (any account holding a role that has is_superuser)
+$hasOwner = (int)$db->query('SELECT COUNT(*) FROM user_roles ur JOIN roles r ON r.id = ur.role_id WHERE r.is_superuser = 1')->fetchColumn() > 0;
+$grantOwner = isset($opt['owner']) || !$hasOwner;
+
 // owner role
 $role = rolesClassEx::sgetByName('owner');
 if (!$role) {
@@ -94,10 +103,14 @@ if ($row) {
     echo "Updated account: $uname (password reset, unlocked)\n";
 } else {
     $db->prepare('INSERT INTO users (name, email, uname, upass, active, expired, wrongpasscount, roles) VALUES (:n, :e, :u, :p, 1, 0, 0, :r)')
-       ->execute([':n' => $name, ':e' => $email, ':u' => $uname, ':p' => $hash, ':r' => 'owner']);
+       ->execute([':n' => $name, ':e' => $email, ':u' => $uname, ':p' => $hash, ':r' => $grantOwner ? 'owner' : 'authenticated']);
     $userId = (int)$db->lastInsertId();
     echo "Created account: $uname\n";
 }
 
-user_rolesClassEx::assignRole($userId, (int)$role->getid(), 'setup');
-echo "Role owner assigned to $uname.\n";
+if($grantOwner) {
+    user_rolesClassEx::assignRole($userId, (int)$role->getid(), 'setup');
+    echo "Role owner assigned to $uname.\n";
+} else {
+    echo "$uname is an ordinary user (add --owner to make them an owner).\n";
+}

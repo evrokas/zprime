@@ -232,3 +232,58 @@ ul.sites, ul.places { list-style: none; margin: 0; padding: 0; }
 .update-hints { margin: 0; padding-left: 20px; }
 .update-hints li { margin: 4px 0; }
 .update-box.is-error [data-update-message] { color: var(--danger); }
+
+/* ---- /admin/* screens (ZeusFW's generic user manager), in this app's look ---- */
+.patients-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.patients-header .page-title { margin: 0; font: 600 1.2rem var(--font-head); }
+.btn-add-patient {
+  min-height: var(--tap); padding: 0 16px; border-radius: 10px; background: var(--primary); color: var(--on-primary);
+  font-weight: 500; text-decoration: none; display: inline-flex; align-items: center;
+}
+.btn-add-patient i, .icon-btn i, .patients-empty i { display: none; }       /* the icon font is not loaded here */
+.admin-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.admin-tab {
+  min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface);
+  text-decoration: none; display: inline-flex; align-items: center; font-size: 14px;
+}
+.admin-tab-active { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.admin-list, .edit-patient { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 14px; min-width: 0; }
+.settings-table-scroll { overflow-x: auto; }                                  /* a wide table scrolls inside its card, not the page */
+.admin-list table { border-collapse: collapse; width: 100%; font-size: 14px; }
+.admin-list th, .admin-list td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.admin-list th { color: var(--text-2); font-weight: 500; white-space: nowrap; }
+.admin-list td.actions { white-space: nowrap; }
+.inline-delete-form { display: inline; margin: 0; }
+.icon-btn {
+  min-height: 40px; padding: 0 12px; margin-right: 6px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); font-size: 14px; text-decoration: none; display: inline-flex; align-items: center; cursor: pointer;
+}
+.icon-btn::after { content: attr(title); }                                    /* "Edit" / "Delete" in words */
+.icon-btn-danger { color: var(--danger); border-color: var(--danger); margin-right: 0; }
+.patients-empty { color: var(--text-2); padding: 8px 4px; }
+.edit-patient .header h4 { margin: 0 0 12px; font: 600 1.15rem var(--font-head); }
+.edit-patient form { display: flex; flex-direction: column; gap: 14px; }
+.edit-patient .input-div { display: flex; flex-direction: column; gap: 4px; }
+.edit-patient label { font-size: 14px; color: var(--text-2); }
+.edit-patient input[type=text], .edit-patient input[type=password], .edit-patient select {
+  min-height: var(--tap); padding: 8px 12px; font-size: 16px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); color: var(--text);
+}
+.edit-patient input[type=checkbox] { width: 22px; height: 22px; accent-color: var(--primary); align-self: flex-start; }
+.admin-role-checklist-item { display: inline-flex; align-items: center; gap: 10px; min-height: var(--tap); color: var(--text); font-size: 15px; }
+.edit-patient .buttons { display: flex; align-items: center; gap: 12px; }
+.edit-patient input[type=submit] {
+  min-height: var(--tap); padding: 0 22px; border-radius: 10px; border: 1px solid var(--primary); background: var(--primary); color: var(--on-primary); font-weight: 500; cursor: pointer;
+}
+.btn-secondary { min-height: var(--tap); padding: 0 16px; border-radius: 10px; border: 1px solid var(--primary); color: var(--primary); text-decoration: none; display: inline-flex; align-items: center; }
+/* the admin pages use the whole width on desktop, not just the websites column */
+.region-main_content > .patients-header, .region-main_content > .admin-tabs,
+.region-main_content > .admin-list, .region-main_content > .edit-patient { grid-column: 1 / -1; }
+
+/* Phones: keep Edit / Delete visible while the rest of the row scrolls sideways, and drop the ID column. */
+@media (max-width: 600px) {
+  .admin-list th:first-child, .admin-list td:first-child { display: none; }
+  .admin-list th:last-child, .admin-list td.actions {
+    position: sticky; right: 0; background: var(--surface); box-shadow: -10px 0 8px -8px rgba(0, 0, 0, .25);
+  }
+  .admin-list .icon-btn { padding: 0 10px; }
+}

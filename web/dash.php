@@ -35,6 +35,30 @@ function zprime_back_home(): never {
     exit();
 }
 
+/**
+ * Runs on every request, right after ZeusFW has restored a session from a "remember me" cookie.
+ *
+ * ZeusFW checks "active"/"expired" only when a password is typed. Without this, an owner who switches
+ * an account off (or deletes it) would not stop a phone that is already signed in, or that holds a
+ * 30-day cookie. So: if the signed-in account is gone, not active or expired, sign it out here, end
+ * its remember-me cookie and delete every remember-me token it holds.
+ */
+function zeusfw_app_boot() {
+    global $kernel;
+    $uname = $kernel->getUserName();
+    if(!$uname) return;
+
+    $account = usersClassEx::getUserAccount($uname);
+    if($account && $account->getactive() && !$account->getexpired()) return;
+
+    $st = dbConnection::getConnection()->prepare('DELETE FROM user_tokens WHERE uname = :u');
+    $st->execute([':u' => $uname]);
+    zeusfw_clear_rememberme_cookie();
+    $kernel->logoutUser();
+    $kernel->addStatus('warning', 'This account is switched off. Ask the owner if you think that is a mistake.');
+    error_log('signed out ' . $uname . ': account is ' . ($account ? 'not active or has expired' : 'gone'));
+}
+
 function homepage($params) {
     // Straight to the sign-in form for a visitor who is not signed in;
     // everything on the page itself is rendered by the regions/modules.

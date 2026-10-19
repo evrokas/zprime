@@ -413,8 +413,19 @@
   /* ---------- confirm before removing ---------- */
   document.addEventListener('submit', function (ev) {
     var msg = ev.target.getAttribute && ev.target.getAttribute('data-confirm');
+    // ZeusFW's admin screens mark their delete forms with a bare `confirmation` attribute.
+    if (!msg && ev.target.hasAttribute && ev.target.hasAttribute('confirmation')) msg = 'Delete this entry? This cannot be undone.';
     if (msg && !window.confirm(msg)) ev.preventDefault();
   });
+
+  /* ---------- new-user form: start with "Active" ticked ---------- */
+  // ZeusFW's defaults for a new account are active=no, which cannot sign in. Someone adding a person
+  // almost always means "yes"; untick it to add the account switched off.
+  (function () {
+    var active = document.getElementById('f-active');
+    var form = active && active.form;
+    if (form && /\/admin\/users\/new$/.test(form.getAttribute('action') || '')) active.checked = true;
+  })();
 
   /* ---------- label the theme button with the current choice ---------- */
   var tb = document.querySelector('[data-theme-toggle]');

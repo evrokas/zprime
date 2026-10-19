@@ -17,6 +17,11 @@ class usersClassEx extends usersClass {
         if($row) {
             $rclass = new usersClass( "users");
             $rclass->loadFields( $row );
+            // An account made on /admin/users has no role until someone ticks one. ZeusFW refuses to sign
+            // in an empty role list ("User roles are initialized falsely"), so such an account would get
+            // a raw error. Here a blank role simply means a plain signed-in user, which is all the
+            // dashboard needs; the owner role (is_superuser, from user_roles) is what grants more.
+            if(trim((string)$rclass->getroles()) === '') $rclass->setroles('authenticated');
             return $rclass;
         } else return (null);
     }

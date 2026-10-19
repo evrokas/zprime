@@ -56,6 +56,7 @@ require_once __DIR__ . '/functional/weather.php';
 require_once __DIR__ . '/functional/icons.php';
 require_once __DIR__ . '/functional/ordering.php';
 require_once __DIR__ . '/functional/update.php';
+require_once __DIR__ . '/functional/users.php';
 
 // Pure helper checks need no database or server.
 $libRunner = new TestRunner('Helpers (validation, Maps URLs)');
@@ -107,6 +108,10 @@ try {
     $orderRunner = new TestRunner('Ordering websites and places');
     zprime_functional_ordering($orderRunner, $server->baseUrl());
     $ok = $orderRunner->run() && $ok;
+
+    $usersRunner = new TestRunner('Adding users');
+    zprime_functional_users($usersRunner, $server->baseUrl());
+    $ok = $usersRunner->run() && $ok;
 
     $gitRunner = new TestRunner('Update button: git pull');
     zprime_functional_git_pull($gitRunner, $git);
