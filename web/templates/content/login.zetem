@@ -1,0 +1,22 @@
+<div class="login-page">
+    <form class="login-card" action="{{ $action }}" method="post">
+        {{ csrf_field() }}
+        <div class="login-brand">ZPrime<span>Personal dashboard</span></div>
+
+        <label class="field" for="username">Username
+            <input type="text" name="username" id="username" autocomplete="username"
+                   autocapitalize="none" autocorrect="off" spellcheck="false" autofocus required>
+        </label>
+
+        <label class="field" for="password">Password
+            <input type="password" name="password" id="password" autocomplete="current-password" required>
+        </label>
+
+        <label class="check" for="rememberme">
+            <input type="checkbox" name="rememberme" id="rememberme" checked>
+            <span>Keep me signed in <small>on this device for 30 days</small></span>
+        </label>
+
+        <button class="btn btn-solid btn-block" type="submit">Sign in</button>
+    </form>
+</div>

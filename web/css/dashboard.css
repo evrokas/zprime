@@ -1,0 +1,194 @@
+/* ZPrime -- mobile-first. Base rules are the phone layout; wider screens
+   add columns at the bottom. Colour tokens follow ZPMS's color-palette.css. */
+:root {
+  --primary: #036379;
+  --primary-light: #04819e;
+  --primary-dark: #024a5c;
+  --on-primary: #ffffff;
+  --bg: #f5f8f8;
+  --surface: #ffffff;
+  --muted: #e3ebec;
+  --border: #d6e1e3;
+  --text: #182427;
+  --text-2: #47585c;
+  --danger: #a3261f;
+  --ok: #2a6b3c;
+  --header-bg: #024a5c;
+  --header-text: #ffffff;
+  --font-body: 'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif;
+  --font-head: 'IBM Plex Serif', Georgia, 'Times New Roman', serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+  --tap: 44px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --primary: #3cb4cf; --primary-light: #6fcce0; --primary-dark: #1d8aa3; --on-primary: #06222a;
+    --bg: #0f1a1d; --surface: #17262a; --muted: #1f3237; --border: #2a4046;
+    --text: #e6f0f1; --text-2: #9db3b7; --danger: #ff8a80; --ok: #7fd197;
+    --header-bg: #123238; --header-text: #e6f0f1;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --primary: #3cb4cf; --primary-light: #6fcce0; --primary-dark: #1d8aa3; --on-primary: #06222a;
+  --bg: #0f1a1d; --surface: #17262a; --muted: #1f3237; --border: #2a4046;
+  --text: #e6f0f1; --text-2: #9db3b7; --danger: #ff8a80; --ok: #7fd197;
+  --header-bg: #123238; --header-text: #e6f0f1;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.5 var(--font-body);
+  -webkit-tap-highlight-color: transparent;
+  /* notch / home-indicator safe areas (viewport-fit=cover) */
+  padding: env(safe-area-inset-top, 0px) max(12px, env(safe-area-inset-right, 0px)) max(24px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+}
+a { color: inherit; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+[hidden] { display: none !important; }
+
+.wrapper { max-width: 1120px; margin: 0 auto; padding-top: 12px; display: flex; flex-direction: column; gap: 14px; }
+.region { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+
+/* ---- buttons / forms ---- */
+.btn {
+  min-height: var(--tap); padding: 0 16px; border-radius: 10px;
+  border: 1px solid var(--primary); background: transparent; color: var(--primary);
+  font-weight: 500; text-decoration: none; display: inline-flex; align-items: center; justify-content: center;
+}
+.btn:hover { background: var(--muted); }
+.btn-solid { background: var(--primary); color: var(--on-primary); }
+.btn-solid:hover { background: var(--primary-light); }
+.btn-block { width: 100%; }
+.btn[aria-pressed="true"] { background: var(--primary); color: var(--on-primary); }
+.linklike { background: none; border: 0; padding: 0; text-decoration: underline; min-height: 32px; }
+.field { display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: var(--text-2); }
+/* 16px+ so iOS does not zoom the page when a field is focused */
+.field input[type=text], .field input[type=password] {
+  min-height: var(--tap); padding: 8px 12px; font-size: 16px;
+  border: 1px solid var(--border); border-radius: 10px; background: var(--bg); color: var(--text);
+}
+.check { display: flex; gap: 12px; align-items: center; min-height: var(--tap); }
+.check input { width: 22px; height: 22px; accent-color: var(--primary); }
+.check small { display: block; color: var(--text-2); }
+.hint { margin: 0; font-size: 13px; color: var(--text-2); }
+
+/* ---- notifications ---- */
+.notification { padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); }
+.notification.notice { border-color: var(--ok); }
+.notification.error, .notification.warning { border-color: var(--danger); }
+
+/* ---- header: clock, date, weather ---- */
+.top {
+  background: var(--header-bg); color: var(--header-text); border-radius: 16px; padding: 16px;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 16px; align-items: end;
+}
+.brand { font: 500 12px var(--font-mono); letter-spacing: .14em; text-transform: uppercase; opacity: .8; }
+.brand span { opacity: .75; }
+.clock { font: 500 clamp(2.8rem, 15vw, 4.2rem)/1 var(--font-head); font-variant-numeric: tabular-nums; margin-top: 4px; }
+.clock small { font: 400 1rem var(--font-mono); opacity: .7; margin-left: 6px; }
+.date { margin-top: 6px; opacity: .9; }
+.wx { text-align: right; display: flex; flex-direction: column; align-items: flex-end; }
+.wx-temp { font: 500 clamp(1.9rem, 9vw, 2.6rem)/1 var(--font-head); font-variant-numeric: tabular-nums; }
+.wx-label { font-size: 14px; opacity: .85; }
+.userbar {
+  grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  border-top: 1px solid rgba(255, 255, 255, .22); padding-top: 8px; font-size: 14px;
+}
+.userbar .actions { display: flex; gap: 18px; align-items: center; }
+.userbar a, .userbar .linklike { color: inherit; display: inline-flex; align-items: center; min-height: 36px; }
+.who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; opacity: .9; }
+
+/* ---- blocks ---- */
+.block { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 14px; min-width: 0; }
+.bh { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
+.bh h2 { font: 600 1.2rem var(--font-head); margin: 0; }
+.bh-actions { display: flex; gap: 8px; }
+.empty { color: var(--text-2); margin: 4px 0 8px; }
+
+ul.sites, ul.places { list-style: none; margin: 0; padding: 0; }
+.sites { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.site-item, .place { position: relative; min-width: 0; }
+.site {
+  display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 8px 10px; min-width: 0;
+  border: 1px solid var(--border); border-radius: 12px; background: var(--bg); text-decoration: none;
+}
+.site:hover, .site:active { border-color: var(--primary); }
+.fav {
+  flex: none; width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center;
+  font: 600 15px var(--font-body); font-style: normal; color: #fff;
+  background: hsl(var(--h, 190) 45% 36%);
+}
+.site-text { min-width: 0; display: flex; flex-direction: column; }
+.site-text b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.site-text small { font: 12px var(--font-mono); color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.places { display: flex; flex-direction: column; gap: 10px; }
+.place { border: 1px solid var(--border); border-radius: 12px; background: var(--bg); padding: 10px; }
+.place-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.place-text { min-width: 0; display: flex; flex-direction: column; }
+.place-text b { font-weight: 500; }
+.place-text small { color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.drive {
+  flex: none; min-height: var(--tap); min-width: 84px; padding: 0 16px; border-radius: 10px;
+  background: var(--primary); color: var(--on-primary); text-decoration: none; font-weight: 500;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.drive::after { content: "\2192"; margin-left: 6px; }
+.drive:hover { background: var(--primary-light); }
+
+/* Edit / Remove are hidden until "Edit" is switched on for the block, so
+   phones never depend on hover. */
+.item-tools { display: none; gap: 8px; margin-top: 8px; }
+.editing .item-tools { display: flex; }
+.item-tools form { margin: 0; }
+.tool {
+  min-height: 40px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface); font-size: 14px;
+}
+.tool-danger { color: var(--danger); border-color: var(--danger); }
+
+/* ---- add / edit dialog ---- */
+.dlg { border: 1px solid var(--border); border-radius: 16px; padding: 0; width: min(92vw, 420px); background: var(--surface); color: var(--text); }
+.dlg::backdrop { background: rgba(0, 0, 0, .5); }
+.dlg form { display: flex; flex-direction: column; gap: 12px; padding: 18px; }
+.dlg h3 { margin: 0; font: 600 1.15rem var(--font-head); }
+.dlg-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
+
+/* ---- login ---- */
+.wrapper-bare { justify-content: center; min-height: 100dvh; padding-top: 0; }
+.login-page { display: grid; place-items: center; padding: 12px 0; }
+.login-card {
+  width: min(100%, 400px); background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 16px;
+}
+.login-brand { font: 600 2rem var(--font-head); color: var(--primary); }
+.login-brand span { display: block; font: 400 12px var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--text-2); margin-top: 2px; }
+
+/* ---- wider screens: two columns ---- */
+@media (min-width: 820px) {
+  body { padding-left: max(24px, env(safe-area-inset-left, 0px)); padding-right: max(24px, env(safe-area-inset-right, 0px)); }
+  .wrapper { gap: 20px; padding-top: 20px; }
+  .top { padding: 22px 28px; }
+  .clock { font-size: 4.4rem; }
+  .wx-temp { font-size: 2.8rem; }
+  .wrapper:not(.wrapper-bare) .region-main_content { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 20px; align-items: start; }
+  .block { padding: 18px 20px; }
+  .sites { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+  .btn:not(.btn-block) { min-height: 38px; }
+  .tool { min-height: 34px; }
+}
+
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; animation: none !important; } }
+
+/* the login form is the only thing on a bare page */
+.wrapper-bare .region-main_content { display: flex; }
+.route-content { min-width: 0; }

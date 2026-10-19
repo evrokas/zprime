@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    {% if(isset($meta))foreach($meta as $metaline): %}
+        <meta {{ $metaline }}>
+    {% endforeach; %}
+
+    {% if(isset($title)): %}
+        <title>{{ $title }}</title>
+    {% endif %}
+
+    {# Installable web app: lets a phone add ZPrime to its home screen and
+       open it full-screen, like an app. #}
+    <link rel="manifest" href="{{ rel_url('/manifest.webmanifest') }}">
+    <link rel="apple-touch-icon" href="{{ rel_url('/assets/apple-touch-icon.png') }}">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    {% if(isset($links))foreach($links as $link): %}
+        <link {{$link->getAttributes()}}>
+    {% endforeach; %}
+
+    {% foreach($head_links as $hlink): %}
+        <script head_links {{$hlink->getAttributes()}}></script>
+    {% endforeach %}
+</head>
+<body>
+
+    {% include page.zetem %}
+
+    {% if(isset($foot_links))foreach($foot_links as $link): %}
+        <script foot_links {{$link->getAttributes()}}></script>
+    {% endforeach; %}
+
+</body></html>

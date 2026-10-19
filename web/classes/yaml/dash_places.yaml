@@ -1,0 +1,30 @@
+table:
+  name: dash_places
+  class: dashPlacesClass
+
+  fields:
+    - name: user_id
+      type: int
+      required: true
+
+    - name: name
+      type: varchar(80)
+      required: true
+
+    # Free-text address, used for the Maps destination when lat/lon is empty.
+    - name: address
+      type: varchar(255)
+
+    # Either both set or both empty. Coordinates win over the address.
+    - name: lat
+      type: decimal(9,6)
+
+    - name: lon
+      type: decimal(9,6)
+
+    - name: sort_order
+      type: int
+      default: 0
+
+    - name: cdate
+      type: "@cdate"

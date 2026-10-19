@@ -1,0 +1,53 @@
+<section class="block" data-block aria-labelledby="h-places">
+    <div class="bh">
+        <h2 id="h-places">Places</h2>
+        <div class="bh-actions">
+            {% if(count($places)): %}<button type="button" class="btn" data-edit-toggle aria-pressed="false">Edit</button>{% endif %}
+            <button type="button" class="btn btn-solid" data-open-dialog="place-dialog" data-reset="1">Add</button>
+        </div>
+    </div>
+
+    {% if(!count($places)): %}
+        <p class="empty">No places yet. Add home, work or anywhere you drive to, and get directions in one tap.</p>
+    {% else: %}
+        <ul class="places">
+        {% foreach($places as $p): %}
+            <li class="place">
+                <div class="place-row">
+                    <div class="place-text"><b>{{{ $p['name'] }}}</b><small>{{{ $p['where'] }}}</small></div>
+                    <a class="drive" href="{{{ $p['maps_url'] }}}" target="_blank" rel="noopener noreferrer"
+                       aria-label="Drive to {{{ $p['name'] }}} in Google Maps">Drive</a>
+                </div>
+                <span class="item-tools">
+                    <button type="button" class="tool" data-open-dialog="place-dialog"
+                            data-id="{{{ $p['id'] }}}" data-name="{{{ $p['name'] }}}" data-where="{{{ $p['where'] }}}"
+                            aria-label="Edit {{{ $p['name'] }}}">Edit</button>
+                    <form method="post" action="{{{ $delete_base }}}/{{{ $p['id'] }}}/delete" data-confirm="Remove {{{ $p['name'] }}}?">
+                        {{ csrf_field() }}
+                        <button type="submit" class="tool tool-danger" aria-label="Remove {{{ $p['name'] }}}">Remove</button>
+                    </form>
+                </span>
+            </li>
+        {% endforeach; %}
+        </ul>
+    {% endif %}
+
+    <dialog id="place-dialog" class="dlg">
+        <form method="post" action="{{{ $save_url }}}">
+            {{ csrf_field() }}
+            <input type="hidden" name="id" value="">
+            <h3 data-dlg-title>Add place</h3>
+            <label class="field" for="place-name">Name
+                <input type="text" id="place-name" name="name" maxlength="80" autocomplete="off" placeholder="Clinic" required>
+            </label>
+            <label class="field" for="place-where">Address, coordinates or Maps link
+                <input type="text" id="place-where" name="where" autocomplete="off" placeholder="38.0421, 23.8105" required>
+            </label>
+            <p class="hint">Paste coordinates, a street address, or a Google Maps link that contains coordinates.</p>
+            <div class="dlg-actions">
+                <button type="button" class="btn" data-close-dialog>Cancel</button>
+                <button type="submit" class="btn btn-solid">Save</button>
+            </div>
+        </form>
+    </dialog>
+</section>

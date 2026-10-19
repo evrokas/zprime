@@ -1,0 +1,17 @@
+<?php
+// Template for the regression suite's OWN database config -- separate from
+// config/db.php (the real database). Copy to config/db.test.php. The suite
+// DROPs and recreates this whole database on every run, so it must be a
+// throwaway database with "test" in its name (tests/bootstrap.php refuses
+// otherwise).
+
+if(!defined('__APPDIR__'))
+  define("__APPDIR__", dirname(__DIR__));
+
+if(!defined('__FWDIR__'))
+  define("__FWDIR__", __APPDIR__ . "/web/core");
+
+define('DB_HOST', 'localhost');
+define('DB_USER', '<<test_user>>');
+define('DB_PASS', '<<test_pass>>');
+define('DB_NAME', 'zprime_test_db');

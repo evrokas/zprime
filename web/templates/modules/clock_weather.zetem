@@ -1,0 +1,20 @@
+<header class="top" data-clock data-tz="{{{ $tz }}}">
+    <div class="top-main">
+        <div class="brand">ZPrime <span>{{{ $home_label }}}</span></div>
+        <div class="clock" aria-live="off"><span data-clock-hm>{{{ $now_hm }}}</span><small data-clock-s>{{{ $now_s }}}</small></div>
+        <div class="date" data-clock-date>{{{ $now_date }}}</div>
+    </div>
+
+    <div class="wx" data-weather data-weather-url="{{{ $weather_url }}}">
+        <div class="wx-temp" data-wx-temp>{{{ $temp_text }}}</div>
+        <div class="wx-label" data-wx-label>{{{ $weather_label }}}</div>
+    </div>
+
+    <div class="userbar">
+        <span class="who">{{{ $display_name }}}</span>
+        <span class="actions">
+            <button type="button" class="linklike" data-theme-toggle aria-label="Change colour theme">Theme</button>
+            <a href="{{{ $logout_url }}}">Sign out</a>
+        </span>
+    </div>
+</header>

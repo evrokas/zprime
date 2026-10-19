@@ -1,0 +1,23 @@
+table:
+  name: dash_links
+  class: dashLinksClass
+
+  fields:
+    - name: user_id
+      type: int
+      required: true
+
+    - name: title
+      type: varchar(80)
+      required: true
+
+    - name: url
+      type: varchar(2000)
+      required: true
+
+    - name: sort_order
+      type: int
+      default: 0
+
+    - name: cdate
+      type: "@cdate"

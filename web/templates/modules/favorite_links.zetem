@@ -1,0 +1,51 @@
+<section class="block" data-block aria-labelledby="h-links">
+    <div class="bh">
+        <h2 id="h-links">Websites</h2>
+        <div class="bh-actions">
+            {% if(count($links)): %}<button type="button" class="btn" data-edit-toggle aria-pressed="false">Edit</button>{% endif %}
+            <button type="button" class="btn btn-solid" data-open-dialog="link-dialog" data-reset="1">Add</button>
+        </div>
+    </div>
+
+    {% if(!count($links)): %}
+        <p class="empty">No websites yet. Add the sites you open every day.</p>
+    {% else: %}
+        <ul class="sites">
+        {% foreach($links as $l): %}
+            <li class="site-item">
+                <a class="site" href="{{{ $l['url'] }}}" rel="noopener noreferrer">
+                    <i class="fav" style="--h: {{{ $l['hue'] }}}" aria-hidden="true">{{{ $l['initial'] }}}</i>
+                    <span class="site-text"><b>{{{ $l['title'] }}}</b><small>{{{ $l['label'] }}}</small></span>
+                </a>
+                <span class="item-tools">
+                    <button type="button" class="tool" data-open-dialog="link-dialog"
+                            data-id="{{{ $l['id'] }}}" data-title="{{{ $l['title'] }}}" data-url="{{{ $l['url'] }}}"
+                            aria-label="Edit {{{ $l['title'] }}}">Edit</button>
+                    <form method="post" action="{{{ $delete_base }}}/{{{ $l['id'] }}}/delete" data-confirm="Remove {{{ $l['title'] }}}?">
+                        {{ csrf_field() }}
+                        <button type="submit" class="tool tool-danger" aria-label="Remove {{{ $l['title'] }}}">Remove</button>
+                    </form>
+                </span>
+            </li>
+        {% endforeach; %}
+        </ul>
+    {% endif %}
+
+    <dialog id="link-dialog" class="dlg">
+        <form method="post" action="{{{ $save_url }}}">
+            {{ csrf_field() }}
+            <input type="hidden" name="id" value="">
+            <h3 data-dlg-title>Add website</h3>
+            <label class="field" for="link-title">Title
+                <input type="text" id="link-title" name="title" maxlength="80" autocomplete="off" placeholder="Hospital portal">
+            </label>
+            <label class="field" for="link-url">Address
+                <input type="text" id="link-url" name="url" inputmode="url" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off" placeholder="example.com" required>
+            </label>
+            <div class="dlg-actions">
+                <button type="button" class="btn" data-close-dialog>Cancel</button>
+                <button type="submit" class="btn btn-solid">Save</button>
+            </div>
+        </form>
+    </dialog>
+</section>

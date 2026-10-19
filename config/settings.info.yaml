@@ -1,0 +1,127 @@
+# ZPrime application configuration (merged over zeusfw + site.info.yaml).
+
+title: ZPrime
+
+tz: "Europe/Athens"
+
+meta:
+  - charset="UTF-8"
+  - http-equiv="X-UA-Compatible" content="IE=edge"
+  # viewport-fit=cover lets the page run under notches; the CSS adds the
+  # safe-area insets back as padding.
+  - name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"
+  - name="theme-color" content="#036379"
+  - name="application-name" content="ZPrime"
+  - name="mobile-web-app-capable" content="yes"
+  - name="apple-mobile-web-app-capable" content="yes"
+  - name="apple-mobile-web-app-title" content="ZPrime"
+  - name="apple-mobile-web-app-status-bar-style" content="black-translucent"
+  - name="robots" content="noindex, nofollow"
+
+favicon:
+  type: image/png
+  src: assets/icon-192.png
+
+templates:
+  - './core/templates/'
+  - './templates/'
+
+css:
+  - dashboard:
+    src: 'css/dashboard.css'
+
+foot_script:
+  - dashboard:
+    type: "text/javascript"
+    src: 'js/dashboard.js'
+
+multilingual: false
+
+# Every role named in an `access:` string must be listed here, or
+# SecurityClass::processRoles() hard-crashes the request. Fine-grained
+# checks (the /admin user manager) are RBAC permissions, see README.md.
+roles:
+  anonymous: []
+  authenticated: []
+  owner: []
+
+routes:
+  homepage:
+    title: "Home"
+    name: homepage
+    url: "/"
+    handler: homepage
+  login:
+    title: "Sign in"
+    url: "/login"
+    handler: login
+    method: get
+  login_post:
+    title: "Sign in"
+    url: "/login"
+    handler: login_post
+    method: post
+  logout:
+    title: "Sign out"
+    url: "/logout"
+    handler: logout
+  api_weather:
+    title: "Weather"
+    url: "/api/weather"
+    handler: zprime_api_weather
+    method: get
+    access: authenticated
+  link_save:
+    title: "Save website"
+    url: "/links/save"
+    handler: zprime_link_save
+    method: post
+    access: authenticated
+  link_delete:
+    title: "Delete website"
+    url: "/links/{id}/delete"
+    handler: zprime_link_delete
+    method: post
+    access: authenticated
+  place_save:
+    title: "Save place"
+    url: "/places/save"
+    handler: zprime_place_save
+    method: post
+    access: authenticated
+  place_delete:
+    title: "Delete place"
+    url: "/places/{id}/delete"
+    handler: zprime_place_delete
+    method: post
+    access: authenticated
+
+# The header only for signed-in users; the login page stands alone.
+regions:
+  - notification
+  - header:
+      access: authenticated
+  - main_content
+
+structure:
+  notification:
+    - notifications
+  header:
+    - clock_weather
+  main_content:
+    # content = the matched route's own output (the login form); the two
+    # dashboard blocks render nothing for a visitor who is not signed in.
+    - content
+    - favorite_links
+    - favorite_places
+
+modules:
+  path:
+    - "/web/core/modules/"
+    - "/web/modules/"
+  modules:
+    - notifications
+    - content
+    - clock_weather
+    - favorite_links
+    - favorite_places

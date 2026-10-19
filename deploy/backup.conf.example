@@ -1,0 +1,51 @@
+# Reference site config for zops (lib/zops's bin/zops-backup,
+# bin/zops-monitor, bin/zops-restore, bin/zops-doctor) -- ZPrime's own
+# backup/health-check registration. See lib/zops/docs/INSTALL.md for the
+# clone command and lib/zops/docs/HANDLERS.md for what
+# backup-handler.php/health-handler.php (both in this same deploy/
+# directory) actually do.
+#
+# Install:
+#   sudo mkdir -p /etc/zops/sites.d
+#   sudo cp deploy/backup.conf.example /etc/zops/sites.d/zprime.conf
+#   sudo $EDITOR /etc/zops/sites.d/zprime.conf
+#   sudo chmod 600 /etc/zops/sites.d/zprime.conf
+#
+# Recommended: a dedicated "zops" system user, group-shared with whichever
+# user Apache/PHP actually runs as -- a compromised web app shouldn't
+# automatically also have the off-site backup SSH key, and the same group
+# membership web/files/ needs for the handler's Dir::link() hardlinks to
+# succeed (fs.protected_hardlinks -- see lib/zops/docs/SECURITY.md).
+
+BACKUP_HANDLER=/var/www/zprime/deploy/backup-handler.php
+HEALTH_HANDLER=/var/www/zprime/deploy/health-handler.php
+
+# Scratch space for the dump and config bundle before they are shipped.
+WORK_DIR=/var/www/zprime/web/files/.zops_work
+LOG_FILE=/var/log/zops/zprime-backup.log
+HEALTH_TIMEOUT=30
+
+# Set the SAME path as zops_backup_status_file in config/site.info.yaml.
+STATUS_FILE=/var/lib/zops/zprime-backup-status.json
+
+# --- Destinations (one or more) -----------------------------------------
+DEST_1=ssh:zops@backup.example.com:/srv/zops-backups/zprime
+DEST_1_KEY=/home/zops/.ssh/id_ed25519
+#DEST_2=local:/mnt/usb-backup/zprime
+
+# --- Retention (tiered daily/weekly/monthly) -----------------------------
+KEEP_DAILY=14
+KEEP_WEEKLY=8
+KEEP_MONTHLY=12
+
+# --- Collector (optional) ------------------------------------------------
+COLLECTOR_URL=https://backup-status.example.com/ingest.php
+COLLECTOR_KEY=
+
+# This app bundles config/db.php and config/site.info.yaml into its "config"
+# backup element -- see lib/zops/docs/SECURITY.md
+# before choosing a destination for these.
+#ENCRYPT_ELEMENTS=true
+#ENCRYPT_PASSPHRASE=
+
+TIMEOUT=1800

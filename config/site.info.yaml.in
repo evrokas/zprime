@@ -1,0 +1,33 @@
+# ZPrime site configuration -- copy to config/site.info.yaml (gitignored)
+# and adjust for this deployment.
+
+php_display_errors: 0
+php_display_startup_errors: 0
+enable_template_comments: 0
+enable_template_cache: 0
+template_cache_path: "cache/"
+
+# Persistent ("keep me signed in") login lifetime, in days. Read by
+# ZeusFW's setup_rememberme() (core/lib/UserLogin.php); default there is 10.
+# Set it in this one file only -- config layers merge with
+# array_merge_recursive().
+remember_me_days: 30
+
+# Home location: drives the temperature in the header (Open-Meteo, no API
+# key). Find your coordinates by long-pressing your house in Google Maps.
+home:
+  label: "Athens"
+  lat: 37.9838
+  lon: 23.7275
+
+# Weather cache lifetime in seconds (one Open-Meteo request per this
+# interval at most, however many devices are open).
+weather_cache_seconds: 600
+
+# Unit for the temperature: celsius | fahrenheit
+temperature_unit: celsius
+
+# Status file written by this site's zops backup handler (see deploy/).
+# zops_backup_status_file: /var/lib/zops/zprime-backup-status.json
+
+disabled_packages: []

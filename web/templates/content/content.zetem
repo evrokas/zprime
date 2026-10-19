@@ -1,0 +1,3 @@
+{% if(!empty($text)): %}
+<div class="route-content">{{$text}}</div>
+{% endif %}

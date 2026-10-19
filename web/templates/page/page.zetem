@@ -1,0 +1,9 @@
+{# The header region carries access: authenticated in
+   config/settings.info.yaml's regions: list, so it renders '' for a
+   signed-out visitor; wrapper-bare lets the login page fill the screen. #}
+{% $__bare = trim($regions['header'] ?? '') === ''; %}
+<div class="wrapper{% if($__bare): %} wrapper-bare{% endif %}">
+    {% foreach($regions as $reg): %}
+        {{ $reg }}
+    {% endforeach; %}
+</div>
