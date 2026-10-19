@@ -8,7 +8,7 @@
  *   php bin/setup.php --user=maria --owner                      # also make Maria an owner
  *
  * The first account ever created becomes the owner (the is_superuser role that can use
- * /admin/users and, if enabled, the Update button). Later accounts are ordinary users
+ * /admin/users). Later accounts are ordinary users
  * unless --owner is given, so adding people never hands out owner rights by accident.
  *
  * The password is asked for without echo. For automation (tests) it can be

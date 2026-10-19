@@ -63,7 +63,6 @@ function zprime_functional_users(TestRunner $runner, string $baseUrl): void {
         assert_not_contains('initialized falsely', $html);
         assert_not_contains('Role is not valid', $html);
         assert_not_contains('href="/admin/users"', $html, 'an ordinary user was shown the Users link');
-        assert_not_contains('data-git-pull', $html, 'an ordinary user was shown the Update button');
         assert_contains('Maria Test', $html);
     });
 

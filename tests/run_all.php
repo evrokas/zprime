@@ -55,7 +55,6 @@ require_once __DIR__ . '/functional/dashboard.php';
 require_once __DIR__ . '/functional/weather.php';
 require_once __DIR__ . '/functional/icons.php';
 require_once __DIR__ . '/functional/ordering.php';
-require_once __DIR__ . '/functional/update.php';
 require_once __DIR__ . '/functional/users.php';
 
 // Pure helper checks need no database or server.
@@ -80,13 +79,8 @@ putenv('ZPRIME_WEATHER_URL=' . $stub->url());
 $site = new IconSite();
 $site->start();
 
-// A throwaway git remote and checkout for the Update button. The main test server has the button switched
-// on and pointed at that checkout; a second server (the same app, default settings) proves it is off by default.
-$git = new GitSandbox();
-$server = new TestServer('127.0.0.1', 8781, ['ZPRIME_GIT_PULL_BUTTON' => '1', 'ZPRIME_UPDATE_DIR' => $git->server]);
+$server = new TestServer();
 $server->start();
-$serverOff = new TestServer('127.0.0.1', 8786, ['ZPRIME_UPDATE_DIR' => $git->server]);
-$serverOff->start();
 
 try {
     $authRunner = new TestRunner('Login, remember-me and CSRF');
@@ -112,17 +106,7 @@ try {
     $usersRunner = new TestRunner('Adding users');
     zprime_functional_users($usersRunner, $server->baseUrl());
     $ok = $usersRunner->run() && $ok;
-
-    $gitRunner = new TestRunner('Update button: git pull');
-    zprime_functional_git_pull($gitRunner, $git);
-    $ok = $gitRunner->run() && $ok;
-
-    $updRunner = new TestRunner('Update button over HTTP');
-    zprime_functional_update_http($updRunner, $server->baseUrl(), $serverOff->baseUrl(), $git);
-    $ok = $updRunner->run() && $ok;
 } finally {
-    $serverOff->stop();
-    $git->destroy();
     $server->stop();
     $stub->stop();
     $site->stop();

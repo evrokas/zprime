@@ -71,12 +71,6 @@ routes:
     handler: zprime_api_weather
     method: get
     access: authenticated
-  system_update:
-    title: "Update from git"
-    url: "/system/update"
-    handler: zprime_system_update
-    method: post
-    access: authenticated
   link_save:
     title: "Save website"
     url: "/links/save"

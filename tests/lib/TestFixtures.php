@@ -30,7 +30,7 @@ class TestFixtures {
         }
     }
 
-    // An owner account: its role has is_superuser, which is what the Update button requires.
+    // An owner account: its role has is_superuser, which is what opens /admin/users.
     const USER_OWNER = 'zprime_test_owner';
     const PASS_OWNER = 'test-password-owner-4';
 

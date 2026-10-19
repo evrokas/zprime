@@ -51,11 +51,11 @@ same address, tick "Keep me signed in" if they want, and see an empty dashboard 
 
 **On the command line:** `sudo -u www-data php bin/setup.php --user=maria --name="Maria"` asks for a
 password. Later accounts are ordinary users; add `--owner` only for someone who should be able to manage
-users (and use the Update button, if you enabled it).
+users.
 
 Things to know:
 
-- An **ordinary user** can use the dashboard and nothing else: no Users link, no Update button, and
+- An **ordinary user** can use the dashboard and nothing else: no Users link, and
   `/admin/*` answers "unauthorized". Give someone the **owner** role (Users, Edit, Roles) only if you trust
   them with every account.
 - **Switching someone off:** edit the user and untick **Active** (or tick **Expired**). They are signed out on
@@ -106,33 +106,6 @@ and every request ends in a 500. If you already hit this: `sudo rm /tmp/fwkernel
 Weather comes from [Open-Meteo](https://open-meteo.com/) (no API key). The server fetches it and caches
 it in `web/cache/`, so many open devices cost one request per interval. If the service is down the last
 reading is shown, and failed fetches are not retried for a minute.
-
-### Update button (git pull)
-
-With `git_pull_button: true` in `config/site.info.yaml`, the owner account sees a small **Update** link in the
-header. It asks for confirmation, then runs `git pull --ff-only` in this installation's folder and shows git's
-output. It never merges or rewrites local work: if the checkout has local commits or edits that conflict, the
-pull is refused and nothing changes. It does not run database changes; if the update touches
-`web/classes/yaml/`, the result says to run `fw/bin/update.sh`.
-
-It is **off by default**, and only an account whose role is a superuser (the `owner` role from
-`bin/setup.php`) can use it; every other account gets 403, and with the setting off the route answers 404.
-Turn it on only if you accept this: whoever can sign in as the owner can make the server pull whatever is on the
-remote branch, so protect that remote and the owner password.
-
-What the server needs before the button can work:
-
-- The web server's user (`www-data` on Debian) must be able to write to the checkout (at least `.git/` and the
-  tracked files), and git must accept the folder: if the checkout belongs to another user git says
-  "dubious ownership"; either own it as `www-data` or run, once,
-  `sudo -u www-data git config --global --add safe.directory /var/www/zprime`.
-- The remote must be reachable without a prompt: an https URL with a stored token
-  (`git config credential.helper store`) or an ssh deploy key without a passphrase, for that same user.
-  Prompts are switched off, so a missing credential fails at once with git's message.
-- The checkout must be on a branch that tracks a remote branch (`git branch -u origin/main`).
-
-The pull has a 60 second limit, one runs at a time, and each request is written to the server's error log.
-The shared ZeusFW folder (`fw`) is a separate checkout and is not touched.
 
 ### Website icons
 

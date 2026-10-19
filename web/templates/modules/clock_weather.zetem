@@ -14,24 +14,8 @@
         <span class="who">{{{ $display_name }}}</span>
         <span class="actions">
             {% if($can_manage_users): %}<a href="{{{ $users_url }}}">Users</a>{% endif %}
-            {% if($can_update): %}<button type="button" class="linklike" data-git-pull aria-label="Update the dashboard from git">Update</button>{% endif %}
             <button type="button" class="linklike" data-theme-toggle aria-label="Change colour theme">Theme</button>
             <a href="{{{ $logout_url }}}">Sign out</a>
         </span>
     </div>
 </header>
-
-{% if($can_update): %}
-<dialog id="update-dialog" class="dlg" data-update-url="{{{ $update_url }}}">
-    <div class="update-box">
-        <h3 data-update-title>Update</h3>
-        <p data-update-message role="status"></p>
-        <pre class="update-output" data-update-output hidden></pre>
-        <ul class="update-hints" data-update-hints hidden></ul>
-        <div class="dlg-actions">
-            <button type="button" class="btn" data-close-dialog>Close</button>
-            <button type="button" class="btn btn-solid" data-update-reload hidden>Reload page</button>
-        </div>
-    </div>
-</dialog>
-{% endif %}

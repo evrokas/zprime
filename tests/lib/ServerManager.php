@@ -12,11 +12,8 @@ class TestServer {
     private int $port;
     private ?string $stdoutLog = null;
     private ?string $stderrLog = null;
-    /** @var array<string,string> extra environment variables for the server process */
-    private array $env;
 
-    function __construct(string $host = '127.0.0.1', int $port = 8781, array $env = []) {
-        $this->env = $env;
+    function __construct(string $host = '127.0.0.1', int $port = 8781) {
         $this->host = $host;
         $this->port = $port;
     }
@@ -34,8 +31,7 @@ class TestServer {
         // actual php -S server, so stop() can signal it directly without
         // needing process-group tricks to reach through an intermediate sh.
         $cmd = sprintf(
-            'exec env ZPRIME_TEST_SERVER=1 ZPRIME_FETCH_ALLOW_PRIVATE=1 %sphp -d display_errors=1 -S %s:%d -t %s %s',
-            implode('', array_map(fn($k, $v) => escapeshellarg($k . '=' . $v) . ' ', array_keys($this->env), $this->env)),
+            'exec env ZPRIME_TEST_SERVER=1 ZPRIME_FETCH_ALLOW_PRIVATE=1 php -d display_errors=1 -S %s:%d -t %s %s',
             escapeshellarg($this->host),
             $this->port,
             escapeshellarg($webRoot),

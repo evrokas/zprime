@@ -355,61 +355,6 @@
     if (ev.key === 'Escape' && drag) dragEnd({ pointerId: drag.pointerId }, true);
   });
 
-  /* ---------- the Update button: git pull on the server ---------- */
-  document.addEventListener('click', function (ev) {
-    var btn = ev.target.closest('[data-git-pull]');
-    if (!btn) return;
-    var dlg = document.getElementById('update-dialog');
-    if (!dlg) return;
-    if (!window.confirm('Pull the latest version from git onto the server now?')) return;
-
-    var box = dlg.querySelector('.update-box');
-    var msg = dlg.querySelector('[data-update-message]');
-    var out = dlg.querySelector('[data-update-output]');
-    var hints = dlg.querySelector('[data-update-hints]');
-    var reload = dlg.querySelector('[data-update-reload]');
-    var title = dlg.querySelector('[data-update-title]');
-    var finish = function (isError, heading, text, output, hintList, canReload) {
-      btn.disabled = false;
-      box.classList.toggle('is-error', isError);
-      title.textContent = heading;
-      msg.textContent = text;
-      out.textContent = output || '';
-      out.hidden = !output;
-      hints.textContent = '';
-      (hintList || []).forEach(function (h) { var li = document.createElement('li'); li.textContent = h; hints.appendChild(li); });
-      hints.hidden = !(hintList && hintList.length);
-      reload.hidden = !canReload;
-    };
-
-    btn.disabled = true;
-    finish(false, 'Updating\u2026', 'Asking git for the latest version. This can take a few seconds.', '', [], false);
-    if (typeof dlg.showModal === 'function' && !dlg.open) dlg.showModal();
-
-    fetch(dlg.getAttribute('data-update-url'), {
-      method: 'POST', credentials: 'same-origin',
-      headers: { 'X-CSRF-Token': csrfToken(), Accept: 'application/json' }
-    })
-      .then(function (r) {
-        return r.json().catch(function () { return { ok: false, error: 'The server could not run the update.' }; })
-          .then(function (j) { if (!r.ok && !j.error) j.error = ICON_ERRORS[r.status]; return j; });
-      })
-      .catch(function () { return { ok: false, error: 'No connection. Nothing was changed.' }; })
-      .then(function (res) {
-        if (!res.ok) {
-          finish(true, 'Update failed', res.error || 'The update failed.', res.output, res.hints, false);
-        } else if (res.updated) {
-          var n = (res.changed || []).length;
-          finish(false, 'Updated', 'New version pulled (' + n + ' file' + (n === 1 ? '' : 's') + ' changed).', res.output, res.hints, true);
-        } else {
-          finish(false, 'Already up to date', 'Nothing new to pull.', '', res.hints, false);
-        }
-      });
-  });
-  document.addEventListener('click', function (ev) {
-    if (ev.target.closest('[data-update-reload]')) window.location.reload();
-  });
-
   /* ---------- confirm before removing ---------- */
   document.addEventListener('submit', function (ev) {
     var msg = ev.target.getAttribute && ev.target.getAttribute('data-confirm');

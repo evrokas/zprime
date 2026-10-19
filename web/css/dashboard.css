@@ -221,18 +221,6 @@ ul.sites, ul.places { list-style: none; margin: 0; padding: 0; }
 .drag-item { z-index: 5; box-shadow: 0 8px 22px rgba(0, 0, 0, .28); border-radius: 12px; background: var(--surface); transition: none; }
 .drag-item > .site, .drag-item.place { border-color: var(--primary); }
 
-/* ---- update button result ---- */
-.update-box { display: flex; flex-direction: column; gap: 12px; padding: 18px; }
-.update-box h3 { margin: 0; font: 600 1.15rem var(--font-head); }
-.update-box p { margin: 0; }
-.update-output {
-  margin: 0; padding: 10px 12px; max-height: 40vh; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere;
-  font: 12.5px/1.5 var(--font-mono); background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
-}
-.update-hints { margin: 0; padding-left: 20px; }
-.update-hints li { margin: 4px 0; }
-.update-box.is-error [data-update-message] { color: var(--danger); }
-
 /* ---- /admin/* screens (ZeusFW's generic user manager), in this app's look ---- */
 .patients-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
 .patients-header .page-title { margin: 0; font: 600 1.2rem var(--font-head); }
