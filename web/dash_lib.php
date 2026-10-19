@@ -206,6 +206,148 @@ function zprime_weather_shape(array $d, bool $stale): array {
     ];
 }
 
+/** WMO weather code -> one emoji (always shown next to a text label, never alone). */
+function zprime_weather_icon(int $code): string {
+    if($code === 0) return '☀️';
+    if($code === 1) return '🌤️';
+    if($code === 2) return '⛅';
+    if($code === 3) return '☁️';
+    if($code === 45 || $code === 48) return '🌫️';
+    if($code >= 51 && $code <= 57) return '🌦️';
+    if(($code >= 61 && $code <= 67) || ($code >= 80 && $code <= 82)) return '🌧️';
+    if(($code >= 71 && $code <= 77) || $code === 85 || $code === 86) return '🌨️';
+    if($code >= 95 && $code <= 99) return '⛈️';
+    return '·';
+}
+
+/* ---------------------------------------------------------------------
+ * Forecast: next 24 hours and 7 days, from Open-Meteo, cached like the
+ * current reading (one request per cache window however many devices are open).
+ * ------------------------------------------------------------------- */
+
+function zprime_forecast_cache_file(): string {
+    return dirname(zprime_weather_cache_file()) . '/zprime-forecast.json';
+}
+
+/**
+ * Turns Open-Meteo's column-oriented answer into rows. The hourly list starts at the current hour in the
+ * place's own time zone (the answer says how far that is from UTC) and holds 24 entries.
+ *
+ * @return array{hourly:array,daily:array}|null null when the answer is not usable
+ */
+function zprime_forecast_shape(array $raw, int $nowTs): ?array {
+    $h = $raw['hourly'] ?? null;
+    $d = $raw['daily'] ?? null;
+    if(!is_array($h) || !is_array($d) || empty($h['time']) || empty($d['time'])) return null;
+    $col = fn(array $src, string $k, int $i) => (isset($src[$k]) && is_array($src[$k]) && isset($src[$k][$i]) && is_numeric($src[$k][$i])) ? (float)$src[$k][$i] : null;
+
+    $nowLocal = gmdate('Y-m-d\TH:00', $nowTs + (int)($raw['utc_offset_seconds'] ?? 0));
+    $hourly = [];
+    foreach($h['time'] as $i => $t) {
+        if(!is_string($t) || strcmp($t, $nowLocal) < 0) continue;       // ISO local times sort as strings
+        $temp = $col($h, 'temperature_2m', $i);
+        if($temp === null) continue;
+        $code = (int)($col($h, 'weather_code', $i) ?? -1);
+        $hourly[] = [
+            't' => $t, 'temp' => round($temp, 1), 'code' => $code,
+            'icon' => zprime_weather_icon($code), 'label' => zprime_weather_label($code),
+            'pop' => ($p = $col($h, 'precipitation_probability', $i)) === null ? null : (int)round($p),
+        ];
+        if(count($hourly) >= 24) break;
+    }
+
+    $daily = [];
+    foreach($d['time'] as $i => $date) {
+        $max = $col($d, 'temperature_2m_max', $i);
+        $min = $col($d, 'temperature_2m_min', $i);
+        if(!is_string($date) || $max === null || $min === null) continue;
+        $code = (int)($col($d, 'weather_code', $i) ?? -1);
+        $daily[] = [
+            'date' => $date, 'code' => $code, 'icon' => zprime_weather_icon($code), 'label' => zprime_weather_label($code),
+            'tmax' => round($max, 1), 'tmin' => round($min, 1),
+            'pop' => ($p = $col($d, 'precipitation_probability_max', $i)) === null ? null : (int)round($p),
+            'precip' => round($col($d, 'precipitation_sum', $i) ?? 0, 1),
+            'wind' => round($col($d, 'wind_speed_10m_max', $i) ?? 0),
+        ];
+    }
+    return ($hourly && $daily) ? ['hourly' => $hourly, 'daily' => $daily] : null;
+}
+
+/**
+ * Cached forecast for the home location, or null when there is none. $fetch=false never touches the network.
+ * A failed refresh is not retried for a minute and the last forecast is served meanwhile, marked stale.
+ *
+ * @param array{lat:float,lon:float,unit:string,ttl:int} $home
+ * @return array{hourly:array,daily:array,unit:string,speed_unit:string,precip_unit:string,fetched:int,stale:bool}|null
+ */
+function zprime_forecast_get(array $home, bool $fetch): ?array {
+    $file = zprime_forecast_cache_file();
+    $key = sprintf('%.4F,%.4F,%s', $home['lat'], $home['lon'], $home['unit']);
+    $ttl = max(300, (int)($home['forecast_ttl'] ?? 1800));
+
+    $cached = null;
+    $raw = is_file($file) ? @file_get_contents($file) : false;
+    if($raw !== false) {
+        $c = json_decode($raw, true);
+        if(is_array($c) && ($c['key'] ?? null) === $key && isset($c['raw'], $c['fetched'])) $cached = $c;
+    }
+    $out = function(array $c, bool $stale): ?array {
+        $shaped = zprime_forecast_shape($c['raw'], time());
+        if($shaped === null) return null;
+        $f = str_contains((string)$c['key'], 'fahrenheit');
+        return $shaped + ['unit' => $f ? 'F' : 'C', 'speed_unit' => $f ? 'mph' : 'km/h', 'precip_unit' => $f ? 'in' : 'mm',
+                          'fetched' => (int)$c['fetched'], 'stale' => $stale];
+    };
+
+    $fresh = $cached !== null && (time() - (int)$cached['fetched']) < $ttl;
+    if($fresh || !$fetch) return $cached === null ? null : $out($cached, !$fresh);
+
+    $failFile = $file . '.fail';
+    if(is_file($failFile) && (time() - (int)@filemtime($failFile)) < 60) return $cached === null ? null : $out($cached, true);
+
+    $f = $home['unit'] === 'fahrenheit';
+    $base = getenv('ZPRIME_WEATHER_URL') ?: 'https://api.open-meteo.com/v1/forecast';
+    $url = $base . '?' . http_build_query([
+        'latitude' => sprintf('%.4F', $home['lat']),
+        'longitude' => sprintf('%.4F', $home['lon']),
+        'hourly' => 'temperature_2m,weather_code,precipitation_probability',
+        'daily' => 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max',
+        'forecast_days' => 7,
+        'timezone' => 'auto',
+        'temperature_unit' => $home['unit'],
+        'wind_speed_unit' => $f ? 'mph' : 'kmh',
+        'precipitation_unit' => $f ? 'inch' : 'mm',
+    ]);
+
+    $reading = null;
+    $ch = curl_init($url);
+    if($ch !== false) {
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true, CURLOPT_CONNECTTIMEOUT => 3, CURLOPT_TIMEOUT => 6,
+            CURLOPT_FOLLOWLOCATION => false, CURLOPT_USERAGENT => 'ZPrime/1.0',
+        ]);
+        $body = curl_exec($ch);
+        $status = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+        curl_close($ch);
+        if($body !== false && $status === 200) {
+            $j = json_decode($body, true);
+            if(is_array($j) && zprime_forecast_shape($j, time()) !== null) {
+                // keep only what the shaper reads: the cache file stays small
+                $keep = ['hourly' => $j['hourly'], 'daily' => $j['daily'], 'utc_offset_seconds' => (int)($j['utc_offset_seconds'] ?? 0)];
+                $reading = ['key' => $key, 'fetched' => time(), 'raw' => $keep];
+            }
+        }
+    }
+    if($reading === null) {
+        @touch($failFile);
+        return $cached === null ? null : $out($cached, true);
+    }
+    @unlink($failFile);
+    $tmp = $file . '.' . getmypid() . '.tmp';
+    if(@file_put_contents($tmp, json_encode($reading)) !== false) @rename($tmp, $file);
+    return $out($reading, false);
+}
+
 /* ---------------------------------------------------------------------
  * Favicons
  *

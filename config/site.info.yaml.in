@@ -24,6 +24,9 @@ home:
 # interval at most, however many devices are open).
 weather_cache_seconds: 600
 
+# Forecast cache lifetime in seconds (minimum 300).
+forecast_cache_seconds: 1800
+
 # Unit for the temperature: celsius | fahrenheit
 temperature_unit: celsius
 

@@ -20,12 +20,15 @@ function zprime_home_config(): array {
     if(is_array($unit)) $unit = end($unit);
     $ttl = $cfg['weather_cache_seconds'] ?? 600;
     if(is_array($ttl)) $ttl = end($ttl);
+    $fttl = $cfg['forecast_cache_seconds'] ?? 1800;
+    if(is_array($fttl)) $fttl = end($fttl);
     return [
         'label' => (string)($home['label'] ?? 'Home'),
         'lat' => (float)($home['lat'] ?? 0),
         'lon' => (float)($home['lon'] ?? 0),
         'unit' => $unit === 'fahrenheit' ? 'fahrenheit' : 'celsius',
         'ttl' => max(60, (int)$ttl),
+        'forecast_ttl' => max(300, (int)$fttl),
         'tz' => (string)($cfg['tz'] ?? 'UTC'),
     ];
 }
@@ -88,6 +91,21 @@ function zprime_api_weather($params) {
         'stale' => $w['stale'],
         'fetched' => $w['fetched'],
     ]);
+    exit();
+}
+
+function zprime_api_forecast($params) {
+    $home = zprime_home_config();
+    $f = zprime_forecast_get($home, true);
+
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-store');
+    if($f === null) {
+        http_response_code(503);
+        echo json_encode(['error' => 'unavailable']);
+        exit();
+    }
+    echo json_encode(['place' => $home['label']] + $f, JSON_UNESCAPED_UNICODE);
     exit();
 }
 

@@ -58,11 +58,13 @@ require_once __DIR__ . '/functional/icons.php';
 require_once __DIR__ . '/functional/ordering.php';
 require_once __DIR__ . '/functional/users.php';
 require_once __DIR__ . '/functional/sysmon.php';
+require_once __DIR__ . '/functional/forecast.php';
 
 // Pure helper checks need no database or server.
 $libRunner = new TestRunner('Helpers (validation, Maps URLs)');
 zprime_functional_helpers($libRunner);
 zprime_functional_sysmon_helpers($libRunner);
+zprime_functional_forecast_helpers($libRunner);
 $ok = $libRunner->run() && $ok;
 
 // Fresh database + two accounts, every run.
@@ -77,6 +79,8 @@ $stub->start();
 putenv('ZPRIME_WEATHER_URL=' . $stub->url());
 @unlink(__DIR__ . '/../web/cache/zprime-weather.json');
 @unlink(__DIR__ . '/../web/cache/zprime-weather.json.fail');
+@unlink(__DIR__ . '/../web/cache/zprime-forecast.json');
+@unlink(__DIR__ . '/../web/cache/zprime-forecast.json.fail');
 
 // A fake website (pages and icons in several shapes) for the favicon tests.
 $site = new IconSite();
@@ -140,6 +144,10 @@ try {
     $usersRunner = new TestRunner('Adding users');
     zprime_functional_users($usersRunner, $server->baseUrl());
     $ok = $usersRunner->run() && $ok;
+
+    $fcRunner = new TestRunner('Forecast');
+    zprime_functional_forecast($fcRunner, $server->baseUrl(), $stub);
+    $ok = $fcRunner->run() && $ok;
 
     $sysRunner = new TestRunner('System block' . ($localNote ? " (local host skipped: $localNote)" : ''));
     zprime_functional_sysmon($sysRunner, $server->baseUrl(), $sysStub, $localNote);

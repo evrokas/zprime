@@ -150,6 +150,15 @@ The same install can be served on more than one hostname and the same accounts s
 Browser cookies belong to one hostname, so signing in on one does not sign you in on another: each
 hostname keeps its own 30-day cookie. True single sign-on would use the ErnsAuth module in ZeusFW.
 
+## Weather forecast
+
+The **Forecast** block shows the next 24 hours (temperature, conditions, chance of rain, scrollable) and the next 7 days
+(conditions, low/high range bars, rain and wind) for the home location set in `config/site.info.yaml` (`home:`).
+Data comes from Open-Meteo (no key), cached server-side for `forecast_cache_seconds` (default 1800, minimum 300), so any
+number of open devices cost one request per window. If the service is down the last forecast is shown, marked
+"Last known forecast", and a failed refresh is not retried for a minute. Units follow `temperature_unit`
+(celsius: °C, km/h, mm; fahrenheit: °F, mph, in). Times are the place's own local time, not the viewer's.
+
 ## System status (sysmonitor)
 
 The **System** block on the home page shows live CPU, memory, disk, temperature and network for the machines

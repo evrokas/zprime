@@ -29,6 +29,8 @@ templates:
 css:
   - dashboard:
     src: 'css/dashboard.css'
+  - forecast:
+    src: 'css/forecast.css'
   - sysmon:
     src: 'css/sysmon.css'
 
@@ -36,6 +38,9 @@ foot_script:
   - dashboard:
     type: "text/javascript"
     src: 'js/dashboard.js'
+  - forecast:
+    type: "text/javascript"
+    src: 'js/forecast.js'
   - sysmon:
     type: "text/javascript"
     src: 'js/sysmon.js'
@@ -112,6 +117,12 @@ routes:
     handler: zprime_place_save
     method: post
     access: authenticated
+  api_forecast:
+    title: "Forecast"
+    url: "/api/forecast"
+    handler: zprime_api_forecast
+    method: get
+    access: authenticated
   api_sysmon:
     title: "System status"
     url: "/api/sysmon"
@@ -155,6 +166,7 @@ structure:
     - content
     - favorite_links
     - favorite_places
+    - forecast
     - system_status
 
 modules:
@@ -167,6 +179,7 @@ modules:
     - clock_weather
     - favorite_links
     - favorite_places
+    - forecast
     - system_status
 
 # The dashboard blocks belong to the home page only. Without this they also appear under every
@@ -176,6 +189,9 @@ modconf:
     display:
       homepage: {}
   favorite_places:
+    display:
+      homepage: {}
+  forecast:
     display:
       homepage: {}
   system_status:
