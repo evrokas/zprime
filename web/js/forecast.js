@@ -56,9 +56,8 @@
         s.appendChild(sv('path', { d: CLOUD, transform: 'translate(2 3.5)' }, 'c f'));
         break;
       case 'cloud': cloud(s, 2.5); s.lastChild.setAttribute('class', 'c'); break;
-      case 'fog':
-        cloud(s, -2);
-        s.appendChild(sv('path', { d: 'M4 17.5h16M7 20.5h12' }, 'l'));
+      case 'fog':   // staggered mist lines, no cloud: the cloud-with-lines version read as a smudge on phones
+        s.appendChild(sv('path', { d: 'M3.5 6.5h13M7.5 11h13M3.5 15.5h13M7.5 20h13' }, 'l'));
         break;
       case 'drizzle': cloud(s, -2); drops(s, 'M8 18l-.8 2M12 18l-.8 2M16 18l-.8 2'); break;
       case 'rain': cloud(s, -2); drops(s, 'M8.5 17.5l-1.5 4.5M12.5 17.5L11 22M16.5 17.5L15 22'); break;
