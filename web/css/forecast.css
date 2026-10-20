@@ -1,5 +1,10 @@
 /* Forecast block. Icons are decoration (aria-hidden): every cell also carries the weather in words. */
-.forecast { grid-column: 1 / -1; --fc-warm: var(--primary); }
+/* Icon colours: amber sun, slate cloud, blue drops; each darker in light mode and lighter in dark so all clear 3:1. */
+.forecast { grid-column: 1 / -1; --fc-warm: var(--primary); --fc-sun: #c27c00; --fc-cloud: #5d7478; --fc-rain: #2a78d6; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .forecast { --fc-sun: #f0b429; --fc-cloud: #9db3b7; --fc-rain: #5aa2f0; }
+}
+:root[data-theme="dark"] .forecast { --fc-sun: #f0b429; --fc-cloud: #9db3b7; --fc-rain: #5aa2f0; }
 .fc-place { font: 400 .85rem var(--font-body); color: var(--text-2); margin-left: 6px; }
 .fc-updated { font-size: 13px; color: var(--text-2); }
 .fc-sub { margin: 14px 0 6px; font: 600 .8rem var(--font-body); letter-spacing: .04em; text-transform: uppercase; color: var(--text-2); }
@@ -10,6 +15,7 @@
   overflow-x: auto; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch;
 }
 .fc-hour {
+  --fc-icon-bg: var(--bg);
   flex: none; width: 58px; scroll-snap-align: start; text-align: center; padding: 8px 2px;
   border: 1px solid var(--border); border-radius: 12px; background: var(--bg);
   display: flex; flex-direction: column; gap: 2px; align-items: center;
@@ -17,7 +23,18 @@
 .fc-hour.is-now { border-color: var(--primary); }
 .fc-h-time { font-size: 12.5px; color: var(--text-2); }
 .fc-hour.is-now .fc-h-time { color: var(--text); font-weight: 600; }
-.fc-icon { font-size: 1.35rem; line-height: 1.3; }
+.fc-icon { font-size: 1.35rem; line-height: 1; display: inline-grid; place-items: center; width: 1.9rem; height: 1.9rem; }
+.fc-icon svg { width: 100%; height: 100%; overflow: visible; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.fc-icon .s { stroke: var(--fc-sun); }
+.fc-icon .c { stroke: var(--fc-cloud); fill: var(--fc-icon-bg, var(--surface)); }
+.fc-icon .d { stroke: var(--fc-rain); }
+.fc-icon .b { stroke: var(--fc-sun); }
+.fc-icon .l { stroke: var(--fc-cloud); }   /* fog lines: cloud colour, never the blue of rain */
+.fc-icon .f { fill: currentColor; }
+.fc-icon circle.s { fill: none; }
+.fc-icon circle.d.f { fill: var(--fc-rain); stroke: none; }
+.fc-icon path.b.f { fill: var(--fc-sun); }
+.fc-icon path.c.f { fill: var(--fc-icon-bg, var(--surface)); }
 .fc-h-temp { font: 500 1rem var(--font-head); font-variant-numeric: tabular-nums; }
 .fc-pop { font-size: 12px; color: var(--text-2); min-height: 1.1em; font-variant-numeric: tabular-nums; }
 .fc-pop.is-wet { color: var(--primary); font-weight: 600; }

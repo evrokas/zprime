@@ -15,7 +15,65 @@
     return e;
   }
   function deg(v) { return Math.round(v) + '°'; }
-  function icon(text) { var s = el('span', 'fc-icon', text); s.setAttribute('aria-hidden', 'true'); return s; }
+  /* Drawn icons instead of emoji: emoji are drawn by each phone's own font, and some (fog above all) are
+     unrecognisable there. Same shapes everywhere; colour comes from CSS (.s sun, .c cloud, .d drops). */
+  var NS = 'http://www.w3.org/2000/svg';
+  var CLOUD = 'M7 16.5a3.6 3.6 0 0 1-.5-7.2 5.6 5.6 0 0 1 10.7-1.1A4.2 4.2 0 0 1 17.5 16.5z';
+  function sv(tag, attrs, cls) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (cls) e.setAttribute('class', cls);
+    return e;
+  }
+  function sun(g, cx, cy, r, from, to, angles) {
+    g.appendChild(sv('circle', { cx: cx, cy: cy, r: r }, 's'));
+    angles.forEach(function (a) {
+      var rad = a * Math.PI / 180, c = Math.cos(rad), s = Math.sin(rad);
+      g.appendChild(sv('line', { x1: (cx + c * from).toFixed(2), y1: (cy + s * from).toFixed(2), x2: (cx + c * to).toFixed(2), y2: (cy + s * to).toFixed(2) }, 's'));
+    });
+  }
+  function cloud(g, dy) { g.appendChild(sv('path', { d: CLOUD, transform: 'translate(0 ' + dy + ')' }, 'c')); }
+  function drops(g, d) { g.appendChild(sv('path', { d: d }, 'd')); }
+  var KIND = {};
+  [[0, 'clear'], [1, 'partly'], [2, 'partly'], [3, 'cloud'], [45, 'fog'], [48, 'fog'], [56, 'drizzle'], [66, 'rain'], [77, 'snow']].forEach(function (p) { KIND[p[0]] = p[1]; });
+  for (var c = 51; c <= 57; c++) KIND[c] = 'drizzle';
+  for (c = 61; c <= 67; c++) KIND[c] = 'rain';
+  for (c = 80; c <= 82; c++) KIND[c] = 'rain';
+  for (c = 71; c <= 77; c++) KIND[c] = 'snow';
+  KIND[85] = KIND[86] = 'snow';
+  for (c = 95; c <= 99; c++) KIND[c] = 'storm';
+
+  function icon(code, fallback) {
+    var holder = el('span', 'fc-icon');
+    holder.setAttribute('aria-hidden', 'true');
+    var kind = KIND[code];
+    if (!kind) { holder.textContent = fallback || '·'; return holder; }
+    var s = sv('svg', { viewBox: '0 0 24 24', focusable: 'false' });
+    switch (kind) {
+      case 'clear': sun(s, 12, 12, 4.2, 7, 9.8, [0, 45, 90, 135, 180, 225, 270, 315]); break;
+      case 'partly':
+        sun(s, 8.5, 8.5, 3.2, 5.2, 7, [180, 225, 270, 315, 0]);
+        s.appendChild(sv('path', { d: CLOUD, transform: 'translate(2 3.5)' }, 'c f'));
+        break;
+      case 'cloud': cloud(s, 2.5); s.lastChild.setAttribute('class', 'c'); break;
+      case 'fog':
+        cloud(s, -2);
+        s.appendChild(sv('path', { d: 'M4 17.5h16M7 20.5h12' }, 'l'));
+        break;
+      case 'drizzle': cloud(s, -2); drops(s, 'M8 18l-.8 2M12 18l-.8 2M16 18l-.8 2'); break;
+      case 'rain': cloud(s, -2); drops(s, 'M8.5 17.5l-1.5 4.5M12.5 17.5L11 22M16.5 17.5L15 22'); break;
+      case 'snow':
+        cloud(s, -2);
+        [[8, 19], [12, 21.5], [16, 19]].forEach(function (p) { s.appendChild(sv('circle', { cx: p[0], cy: p[1], r: 1 }, 'd f')); });
+        break;
+      case 'storm':
+        cloud(s, -2);
+        s.appendChild(sv('path', { d: 'M13 13.5l-3.2 4.8h3L11.6 23l4.4-6.2h-3l1.4-3.3z' }, 'b f'));
+        break;
+    }
+    holder.appendChild(s);
+    return holder;
+  }
   function pop(v) {
     var s = el('span', 'fc-pop' + (v != null && v >= 40 ? ' is-wet' : ''), v != null && v >= 10 ? v + '%' : '');
     if (v != null && v >= 10) s.title = 'Chance of precipitation';
@@ -39,7 +97,7 @@
       var li = el('li', 'fc-hour' + (i === 0 ? ' is-now' : ''));
       var time = i === 0 ? 'Now' : h.t.slice(11, 16);
       li.appendChild(el('span', 'fc-h-time', time));
-      li.appendChild(icon(h.icon));
+      li.appendChild(icon(h.code, h.icon));
       li.appendChild(el('span', 'fc-h-temp', deg(h.temp)));
       li.appendChild(pop(h.pop));
       li.setAttribute('aria-label', time + ', ' + h.label + ', ' + deg(h.temp) + (h.pop != null && h.pop >= 10 ? ', ' + h.pop + '% chance of precipitation' : ''));
@@ -58,7 +116,7 @@
       var name = el('span', 'fc-d-name', dayName(d.date, i));
       name.appendChild(el('small', '', dayDate(d.date)));
       li.appendChild(name);
-      li.appendChild(icon(d.icon));
+      li.appendChild(icon(d.code, d.icon));
       li.appendChild(el('span', 'fc-d-label', d.label));
       li.appendChild(pop(d.pop));
 
