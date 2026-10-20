@@ -47,7 +47,8 @@
     var holder = el('span', 'fc-icon');
     holder.setAttribute('aria-hidden', 'true');
     var kind = KIND[code];
-    if (!kind) { holder.textContent = fallback || '·'; return holder; }
+    // Default is the emoji the server sends; 'drawn' (config forecast_icons) uses the SVG set below.
+    if (!kind || root.getAttribute('data-icons') !== 'drawn') { holder.textContent = fallback || '·'; return holder; }
     var s = sv('svg', { viewBox: '0 0 24 24', focusable: 'false' });
     switch (kind) {
       case 'clear': sun(s, 12, 12, 4.2, 7, 9.8, [0, 45, 90, 135, 180, 225, 270, 315]); break;

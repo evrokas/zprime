@@ -22,6 +22,8 @@ function zprime_home_config(): array {
     if(is_array($ttl)) $ttl = end($ttl);
     $fttl = $cfg['forecast_cache_seconds'] ?? 1800;
     if(is_array($fttl)) $fttl = end($fttl);
+    $icons = $cfg['forecast_icons'] ?? 'emoji';
+    if(is_array($icons)) $icons = end($icons);
     return [
         'label' => (string)($home['label'] ?? 'Home'),
         'lat' => (float)($home['lat'] ?? 0),
@@ -29,6 +31,7 @@ function zprime_home_config(): array {
         'unit' => $unit === 'fahrenheit' ? 'fahrenheit' : 'celsius',
         'ttl' => max(60, (int)$ttl),
         'forecast_ttl' => max(300, (int)$fttl),
+        'forecast_icons' => $icons === 'drawn' ? 'drawn' : 'emoji',
         'tz' => (string)($cfg['tz'] ?? 'UTC'),
     ];
 }

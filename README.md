@@ -156,7 +156,7 @@ The **Forecast** block shows the next 24 hours (temperature, conditions, chance 
 (conditions, low/high range bars, rain and wind) for the home location set in `config/site.info.yaml` (`home:`).
 Data comes from Open-Meteo (no key), cached server-side for `forecast_cache_seconds` (default 1800, minimum 300), so any
 number of open devices cost one request per window. If the service is down the last forecast is shown, marked
-"Last known forecast", and a failed refresh is not retried for a minute. Units follow `temperature_unit`
+"Last known forecast", and a failed refresh is not retried for a minute. Icons are emoji by default (fog is 🌁); set `forecast_icons: drawn` in `config/site.info.yaml` for built-in line icons that look identical on every device. Units follow `temperature_unit`
 (celsius: °C, km/h, mm; fahrenheit: °F, mph, in). Times are the place's own local time, not the viewer's.
 
 ## System status (sysmonitor)

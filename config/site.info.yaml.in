@@ -27,6 +27,9 @@ weather_cache_seconds: 600
 # Forecast cache lifetime in seconds (minimum 300).
 forecast_cache_seconds: 1800
 
+# Forecast icons: emoji (default; drawn by the phone's own font) | drawn (built-in line icons, identical everywhere).
+forecast_icons: emoji
+
 # Unit for the temperature: celsius | fahrenheit
 temperature_unit: celsius
 

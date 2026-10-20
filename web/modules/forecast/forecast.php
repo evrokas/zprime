@@ -9,6 +9,7 @@ class forecastModule extends moduleClass {
         return Renderer::render('forecast.zetem', [
             'data_url' => rel_url('/api/forecast'),
             'place' => $home['label'],
+            'icons' => $home['forecast_icons'],
         ]);
     }
 }

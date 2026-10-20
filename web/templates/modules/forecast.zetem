@@ -1,4 +1,4 @@
-<section class="block forecast" data-forecast data-url="{{{ $data_url }}}" aria-labelledby="h-forecast">
+<section class="block forecast" data-forecast data-url="{{{ $data_url }}}" data-icons="{{{ $icons }}}" aria-labelledby="h-forecast">
     <div class="bh">
         <h2 id="h-forecast">Forecast <small class="fc-place">{{{ $place }}}</small></h2>
         <div class="bh-actions"><span class="fc-updated" data-fc-updated role="status"></span></div>
