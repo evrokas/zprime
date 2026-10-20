@@ -212,7 +212,7 @@ function zprime_weather_icon(int $code): string {
     if($code === 1) return '🌤️';
     if($code === 2) return '⛅';
     if($code === 3) return '☁️';
-    if($code === 45 || $code === 48) return '🌁';       // not 🌫️: that one is newer and many phone fonts draw it as a grey smudge
+    if($code === 45 || $code === 48) return '☁️';       // same cloud as overcast, by choice: 🌫️ is drawn as a grey smudge and 🌁 as a bridge on phones; the words say "Fog"
     if($code >= 51 && $code <= 57) return '🌦️';
     if(($code >= 61 && $code <= 67) || ($code >= 80 && $code <= 82)) return '🌧️';
     if(($code >= 71 && $code <= 77) || $code === 85 || $code === 86) return '🌨️';

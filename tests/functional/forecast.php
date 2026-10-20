@@ -102,8 +102,8 @@ function zprime_functional_forecast_helpers(TestRunner $runner): void {
         foreach ([0, 1, 2, 3, 45, 48, 51, 57, 61, 67, 71, 77, 80, 82, 85, 86, 95, 99] as $c) {
             assert_true(zprime_weather_icon($c) !== '·', "no icon for $c");
         }
-        assert_equal('🌁', zprime_weather_icon(45), 'fog uses the foggy emoji');
-        assert_equal('🌁', zprime_weather_icon(48));
+        assert_equal('☁️', zprime_weather_icon(45), 'fog uses the cloud emoji');
+        assert_equal('☁️', zprime_weather_icon(48));
         assert_equal('·', zprime_weather_icon(-1));
         assert_equal('·', zprime_weather_icon(1234));
     });
@@ -140,7 +140,7 @@ function zprime_functional_forecast(TestRunner $runner, string $baseUrl, Weather
         assert_equal(gmdate('Y-m-d', time() + 7200), $j['daily'][0]['date']);
         assert_equal('Clear', $j['daily'][0]['label']);
         assert_equal('⛈️', $j['daily'][5]['icon']);
-        assert_equal('🌁', $j['daily'][6]['icon']);                       // the stub's seventh day is fog
+        assert_equal('☁️', $j['daily'][6]['icon']);                       // the stub's seventh day is fog
         assert_equal(20.4, $j['daily'][0]['tmax']);
         assert_equal(11.6, $j['daily'][0]['tmin']);
     });
