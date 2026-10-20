@@ -34,10 +34,12 @@
 .fc-d-range .lo { text-align: right; color: var(--text-2); }
 .fc-track { position: relative; height: 6px; border-radius: 3px; background: var(--muted); }
 .fc-fill { position: absolute; top: 0; bottom: 0; border-radius: 3px; background: var(--fc-warm); }
-.fc-d-meta { grid-column: 4; font-size: 12px; color: var(--text-2); }
+.fc-d-meta { grid-column: 2 / -1; font-size: 13px; color: var(--text-2); }
+.fc-d-mlabel { color: var(--text); }
 .fc-d-label { display: none; font-size: 14px; color: var(--text-2); }   /* before the media query that shows it */
 @media (min-width: 640px) {
   .fc-day { grid-template-columns: 5rem 2rem 8rem 3rem minmax(0, 1fr) 9rem; }
   .fc-d-label { display: block; }
+  .fc-d-mlabel { display: none; }
   .fc-d-meta { grid-column: auto; text-align: right; }
 }

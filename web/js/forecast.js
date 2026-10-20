@@ -75,7 +75,12 @@
       var meta = [];
       if (d.precip > 0) meta.push(d.precip + ' ' + data.precip_unit);
       if (d.wind > 0) meta.push('wind ' + d.wind + ' ' + data.speed_unit);
-      li.appendChild(el('span', 'fc-d-meta', meta.join(' · ')));
+      // On a phone the label column is hidden, so the condition leads the detail line instead:
+      // an icon is never the only thing saying what the weather is.
+      var metaEl = el('span', 'fc-d-meta');
+      metaEl.appendChild(el('span', 'fc-d-mlabel', d.label + (meta.length ? ' · ' : '')));
+      metaEl.appendChild(document.createTextNode(meta.join(' · ')));
+      li.appendChild(metaEl);
       li.setAttribute('aria-label', dayName(d.date, i) + ', ' + d.label + ', low ' + deg(d.tmin) + ', high ' + deg(d.tmax) +
         (d.pop != null && d.pop >= 10 ? ', ' + d.pop + '% chance of precipitation' : ''));
       days.appendChild(li);
