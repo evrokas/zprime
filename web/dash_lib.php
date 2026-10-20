@@ -230,6 +230,43 @@ function zprime_forecast_cache_file(): string {
 }
 
 /**
+ * One condition for a whole day, from its daytime (07:00-21:00) hourly codes.
+ *
+ * Open-Meteo's own daily code is "the most severe condition of the day", so one foggy early hour labels a
+ * sunny day "Fog", which no other weather service does. Instead: thunderstorm, snow, rain and drizzle win
+ * when they last two hours or more (one stray hour is ignored); fog counts only if it fills most of the
+ * daytime; otherwise the most common sky (clear, mostly clear, partly cloudy, overcast; ties go to the
+ * cloudier). With no daytime hours at all the service's own code is used.
+ *
+ * @param int[] $codes WMO codes of the daytime hours
+ */
+function zprime_forecast_day_code(array $codes, int $dailyCode): int {
+    $n = count($codes);
+    if($n === 0) return $dailyCode;
+    $mode = function(array $c): int {                      // most frequent, ties to the higher (more severe/cloudier) code
+        $counts = array_count_values($c);
+        krsort($counts);
+        arsort($counts);                                    // stable on PHP 8: equal counts keep the krsort (high first) order
+        return (int)array_key_first($counts);
+    };
+    $groups = [
+        'storm'   => fn($c) => $c >= 95 && $c <= 99,
+        'snow'    => fn($c) => ($c >= 71 && $c <= 77) || $c === 85 || $c === 86,
+        'rain'    => fn($c) => ($c >= 61 && $c <= 67) || ($c >= 80 && $c <= 82),
+        'drizzle' => fn($c) => $c >= 51 && $c <= 57,
+    ];
+    $need = min(2, $n);
+    foreach($groups as $in) {
+        $hit = array_values(array_filter($codes, $in));
+        if(count($hit) >= $need) return $mode($hit);
+    }
+    $fog = array_values(array_filter($codes, fn($c) => $c === 45 || $c === 48));
+    if(count($fog) * 100 >= $n * 60) return $mode($fog);
+    $sky = array_values(array_filter($codes, fn($c) => $c >= 0 && $c <= 3));
+    return $sky ? $mode($sky) : $mode($codes);
+}
+
+/**
  * Turns Open-Meteo's column-oriented answer into rows. The hourly list starts at the current hour in the
  * place's own time zone (the answer says how far that is from UTC) and holds 24 entries.
  *
@@ -256,12 +293,21 @@ function zprime_forecast_shape(array $raw, int $nowTs): ?array {
         if(count($hourly) >= 24) break;
     }
 
+    // daytime codes per local date, from the whole hourly list (including hours already past)
+    $dayCodes = [];
+    foreach($h['time'] as $i => $t) {
+        if(!is_string($t) || strlen($t) < 13) continue;
+        $hour = (int)substr($t, 11, 2);
+        $c = $col($h, 'weather_code', $i);
+        if($hour >= 7 && $hour <= 21 && $c !== null) $dayCodes[substr($t, 0, 10)][] = (int)$c;
+    }
+
     $daily = [];
     foreach($d['time'] as $i => $date) {
         $max = $col($d, 'temperature_2m_max', $i);
         $min = $col($d, 'temperature_2m_min', $i);
         if(!is_string($date) || $max === null || $min === null) continue;
-        $code = (int)($col($d, 'weather_code', $i) ?? -1);
+        $code = zprime_forecast_day_code($dayCodes[$date] ?? [], (int)($col($d, 'weather_code', $i) ?? -1));
         $daily[] = [
             'date' => $date, 'code' => $code, 'icon' => zprime_weather_icon($code), 'label' => zprime_weather_label($code),
             'tmax' => round($max, 1), 'tmin' => round($min, 1),

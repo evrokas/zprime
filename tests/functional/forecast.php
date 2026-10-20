@@ -53,6 +53,51 @@ function zprime_functional_forecast_helpers(TestRunner $runner): void {
         assert_null(zprime_forecast_shape(['hourly' => ['time' => ['2000-01-01T00:00'], 'temperature_2m' => [1]], 'daily' => ['time' => ['2000-01-01'], 'temperature_2m_max' => [1], 'temperature_2m_min' => [0]]], time()));
     });
 
+    // Day conditions: build one day of hourly codes, 'hour => code' for the hours given, 0 elsewhere.
+    $dayCode = function (array $byHour, int $daily = 45) {
+        $h = ['time' => [], 'temperature_2m' => [], 'weather_code' => [], 'precipitation_probability' => []];
+        for ($hr = 0; $hr < 24; $hr++) {
+            $h['time'][] = sprintf('2026-10-21T%02d:00', $hr);
+            $h['temperature_2m'][] = 15;
+            $h['weather_code'][] = $byHour[$hr] ?? 0;
+            $h['precipitation_probability'][] = 0;
+        }
+        $d = ['time' => ['2026-10-21'], 'weather_code' => [$daily], 'temperature_2m_max' => [20], 'temperature_2m_min' => [10],
+              'precipitation_probability_max' => [0], 'precipitation_sum' => [0], 'wind_speed_10m_max' => [5]];
+        return zprime_forecast_shape(['utc_offset_seconds' => 0, 'hourly' => $h, 'daily' => $d], gmmktime(0, 0, 0, 10, 20, 2026))['daily'][0]['code'];
+    };
+    $range = fn(int $from, int $to, int $code) => array_fill_keys(range($from, $to), $code);
+
+    $runner->add('day condition: a patch of early-morning fog does not make a clear day foggy', function () use ($dayCode, $range) {
+        assert_equal(0, $dayCode($range(4, 8, 45), 45), 'service said fog for the day');
+        assert_equal(0, $dayCode($range(0, 9, 45), 45));
+    });
+    $runner->add('day condition: fog that fills the daytime still counts', function () use ($dayCode, $range) {
+        assert_equal(45, $dayCode($range(0, 23, 45), 45));
+        assert_equal(48, $dayCode($range(7, 17, 48), 48));        // 11 of 15 daytime hours
+    });
+    $runner->add('day condition: rain, snow, storm and drizzle win when they last two hours; one stray hour is ignored', function () use ($dayCode, $range) {
+        assert_equal(61, $dayCode($range(10, 12, 61), 61));
+        assert_equal(0, $dayCode([10 => 61], 61), 'a single rainy hour decided the day');
+        assert_equal(73, $dayCode($range(8, 9, 73), 73));
+        assert_equal(51, $dayCode($range(8, 10, 51), 51));
+        assert_equal(95, $dayCode($range(9, 10, 95) + $range(11, 16, 63), 95), 'storm should beat rain');
+        assert_equal(63, $dayCode($range(11, 16, 63) + $range(8, 9, 51) + $range(0, 4, 45), 63), 'rain should beat drizzle and fog');
+        assert_equal(51, $dayCode($range(8, 10, 51) + $range(0, 23, 45), 51), 'drizzle should beat fog');
+    });
+    $runner->add('day condition: otherwise the most common sky, ties to the cloudier', function () use ($dayCode, $range) {
+        assert_equal(2, $dayCode($range(7, 12, 2) + $range(13, 16, 3), 3));          // 6 partly vs 4 overcast vs 5 clear
+        assert_equal(3, $dayCode($range(7, 14, 3) + $range(15, 21, 0), 3));          // 8 overcast vs 7 clear
+        assert_equal(3, $dayCode($range(7, 13, 2) + $range(14, 20, 3) + [21 => 0], 3), 'a tie between partly cloudy and overcast should go to overcast');
+        assert_equal(1, $dayCode($range(7, 21, 1), 1));
+    });
+    $runner->add('day condition: hours outside 07:00-21:00 are ignored, and with no hourly data the service code is used', function () use ($dayCode, $range) {
+        assert_equal(0, $dayCode($range(22, 23, 95) + $range(0, 6, 65), 95), 'night weather decided the day');
+        $d = ['time' => ['2030-01-01'], 'weather_code' => [3], 'temperature_2m_max' => [1], 'temperature_2m_min' => [0]];
+        $h = ['time' => ['2030-01-02T12:00'], 'temperature_2m' => [1], 'weather_code' => [0]];
+        assert_equal(3, zprime_forecast_shape(['hourly' => $h, 'daily' => $d], gmmktime(0, 0, 0, 1, 1, 2030))['daily'][0]['code']);
+    });
+
     $runner->add('weather icons: every known code has one, unknown codes get a neutral mark', function () {
         foreach ([0, 1, 2, 3, 45, 48, 51, 57, 61, 67, 71, 77, 80, 82, 85, 86, 95, 99] as $c) {
             assert_true(zprime_weather_icon($c) !== '·', "no icon for $c");
