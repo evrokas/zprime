@@ -4,6 +4,14 @@ title: Dashboard
 
 tz: "Europe/Athens"
 
+# Which weather icon the 7-day forecast shows for each day:
+#   service  Open-Meteo's own daily code: the MOST SEVERE condition of the day (default). One foggy early
+#            hour can make a clear day show as fog.
+#   daytime  worked out from the daytime hours (07:00-21:00): thunderstorm, snow, rain or drizzle if they
+#            last 2+ hours, fog only if it fills most of the day, otherwise the most common sky.
+# Takes effect immediately (the cached forecast is re-read), no cache clearing needed.
+forecast_day_condition: service
+
 meta:
   - charset="UTF-8"
   - http-equiv="X-UA-Compatible" content="IE=edge"

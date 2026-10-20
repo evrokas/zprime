@@ -64,13 +64,24 @@ function zprime_functional_forecast_helpers(TestRunner $runner): void {
         }
         $d = ['time' => ['2026-10-21'], 'weather_code' => [$daily], 'temperature_2m_max' => [20], 'temperature_2m_min' => [10],
               'precipitation_probability_max' => [0], 'precipitation_sum' => [0], 'wind_speed_10m_max' => [5]];
-        return zprime_forecast_shape(['utc_offset_seconds' => 0, 'hourly' => $h, 'daily' => $d], gmmktime(0, 0, 0, 10, 20, 2026))['daily'][0]['code'];
+        return zprime_forecast_shape(['utc_offset_seconds' => 0, 'hourly' => $h, 'daily' => $d], gmmktime(0, 0, 0, 10, 20, 2026), 'daytime')['daily'][0]['code'];
     };
     $range = fn(int $from, int $to, int $code) => array_fill_keys(range($from, $to), $code);
 
     $runner->add('day condition: a patch of early-morning fog does not make a clear day foggy', function () use ($dayCode, $range) {
         assert_equal(0, $dayCode($range(4, 8, 45), 45), 'service said fog for the day');
         assert_equal(0, $dayCode($range(0, 9, 45), 45));
+    });
+    $runner->add('day condition: by default the service code is used unchanged (the "service" way)', function () use ($range) {
+        $h = ['time' => [], 'temperature_2m' => [], 'weather_code' => []];
+        for ($hr = 0; $hr < 24; $hr++) { $h['time'][] = sprintf('2026-10-21T%02d:00', $hr); $h['temperature_2m'][] = 15; $h['weather_code'][] = ($hr >= 4 && $hr <= 8) ? 45 : 0; }
+        $d = ['time' => ['2026-10-21'], 'weather_code' => [45], 'temperature_2m_max' => [20], 'temperature_2m_min' => [10]];
+        $raw = ['utc_offset_seconds' => 0, 'hourly' => $h, 'daily' => $d];
+        $now = gmmktime(0, 0, 0, 10, 20, 2026);
+        assert_equal(45, zprime_forecast_shape($raw, $now)['daily'][0]['code'], 'default must be the service code');
+        assert_equal(45, zprime_forecast_shape($raw, $now, 'service')['daily'][0]['code']);
+        assert_equal(0, zprime_forecast_shape($raw, $now, 'daytime')['daily'][0]['code']);
+        assert_equal(45, zprime_forecast_shape($raw, $now, 'anything else')['daily'][0]['code'], 'unknown mode must fall back to the service code');
     });
     $runner->add('day condition: fog that fills the daytime still counts', function () use ($dayCode, $range) {
         assert_equal(45, $dayCode($range(0, 23, 45), 45));
@@ -95,7 +106,7 @@ function zprime_functional_forecast_helpers(TestRunner $runner): void {
         assert_equal(0, $dayCode($range(22, 23, 95) + $range(0, 6, 65), 95), 'night weather decided the day');
         $d = ['time' => ['2030-01-01'], 'weather_code' => [3], 'temperature_2m_max' => [1], 'temperature_2m_min' => [0]];
         $h = ['time' => ['2030-01-02T12:00'], 'temperature_2m' => [1], 'weather_code' => [0]];
-        assert_equal(3, zprime_forecast_shape(['hourly' => $h, 'daily' => $d], gmmktime(0, 0, 0, 1, 1, 2030))['daily'][0]['code']);
+        assert_equal(3, zprime_forecast_shape(['hourly' => $h, 'daily' => $d], gmmktime(0, 0, 0, 1, 1, 2030), 'daytime')['daily'][0]['code']);
     });
 
     $runner->add('weather icons: every known code has one, unknown codes get a neutral mark', function () {
@@ -123,6 +134,25 @@ function zprime_functional_forecast(TestRunner $runner, string $baseUrl, Weather
         $d['fetched'] = time() - $s;
         file_put_contents($cache, json_encode($d));
     };
+
+    // The setting must actually reach the shaper through zprime_forecast_get() (a closure once dropped it).
+    $runner->add('the day-condition setting changes the icon the cached forecast produces', function () use ($cache) {
+        $h = ['time' => [], 'temperature_2m' => [], 'weather_code' => [], 'precipitation_probability' => []];
+        $midnight = intdiv(time() + 7200, 86400) * 86400;
+        for ($i = 0; $i < 48; $i++) {
+            $h['time'][] = gmdate('Y-m-d\TH:00', $midnight + $i * 3600);
+            $h['temperature_2m'][] = 15; $h['weather_code'][] = 0; $h['precipitation_probability'][] = 0;
+        }
+        $d = ['time' => [gmdate('Y-m-d', $midnight), gmdate('Y-m-d', $midnight + 86400)], 'weather_code' => [45, 45],
+              'temperature_2m_max' => [20, 20], 'temperature_2m_min' => [10, 10]];
+        $home = ['lat' => 1.5, 'lon' => 2.5, 'unit' => 'celsius', 'ttl' => 600, 'forecast_ttl' => 1800];
+        file_put_contents($cache, json_encode(['key' => '1.5000,2.5000,celsius', 'fetched' => time(),
+            'raw' => ['hourly' => $h, 'daily' => $d, 'utc_offset_seconds' => 7200]]));
+        assert_equal('Fog', zprime_forecast_get($home, false)['daily'][0]['label'], 'default (service) must show the service code');
+        assert_equal('Fog', zprime_forecast_get($home + ['forecast_day' => 'service'], false)['daily'][0]['label']);
+        assert_equal('Clear', zprime_forecast_get($home + ['forecast_day' => 'daytime'], false)['daily'][0]['label'], 'daytime setting did not reach the shaper');
+        @unlink($cache);
+    });
 
     $runner->add('the first request fetches the forecast: 24 hours from now, 7 days from today', function () use ($a, $stub) {
         $before = $stub->requests();

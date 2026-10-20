@@ -270,9 +270,12 @@ function zprime_forecast_day_code(array $codes, int $dailyCode): int {
  * Turns Open-Meteo's column-oriented answer into rows. The hourly list starts at the current hour in the
  * place's own time zone (the answer says how far that is from UTC) and holds 24 entries.
  *
+ * $dayMode 'service' shows Open-Meteo's own daily code; 'daytime' works it out from the daytime hours
+ * (see zprime_forecast_day_code()).
+ *
  * @return array{hourly:array,daily:array}|null null when the answer is not usable
  */
-function zprime_forecast_shape(array $raw, int $nowTs): ?array {
+function zprime_forecast_shape(array $raw, int $nowTs, string $dayMode = 'service'): ?array {
     $h = $raw['hourly'] ?? null;
     $d = $raw['daily'] ?? null;
     if(!is_array($h) || !is_array($d) || empty($h['time']) || empty($d['time'])) return null;
@@ -307,7 +310,8 @@ function zprime_forecast_shape(array $raw, int $nowTs): ?array {
         $max = $col($d, 'temperature_2m_max', $i);
         $min = $col($d, 'temperature_2m_min', $i);
         if(!is_string($date) || $max === null || $min === null) continue;
-        $code = zprime_forecast_day_code($dayCodes[$date] ?? [], (int)($col($d, 'weather_code', $i) ?? -1));
+        $code = (int)($col($d, 'weather_code', $i) ?? -1);
+        if($dayMode === 'daytime') $code = zprime_forecast_day_code($dayCodes[$date] ?? [], $code);
         $daily[] = [
             'date' => $date, 'code' => $code, 'icon' => zprime_weather_icon($code), 'label' => zprime_weather_label($code),
             'tmax' => round($max, 1), 'tmin' => round($min, 1),
@@ -337,8 +341,8 @@ function zprime_forecast_get(array $home, bool $fetch): ?array {
         $c = json_decode($raw, true);
         if(is_array($c) && ($c['key'] ?? null) === $key && isset($c['raw'], $c['fetched'])) $cached = $c;
     }
-    $out = function(array $c, bool $stale): ?array {
-        $shaped = zprime_forecast_shape($c['raw'], time());
+    $out = function(array $c, bool $stale) use ($home): ?array {
+        $shaped = zprime_forecast_shape($c['raw'], time(), $home['forecast_day'] ?? 'service');
         if($shaped === null) return null;
         $f = str_contains((string)$c['key'], 'fahrenheit');
         return $shaped + ['unit' => $f ? 'F' : 'C', 'speed_unit' => $f ? 'mph' : 'km/h', 'precip_unit' => $f ? 'in' : 'mm',
