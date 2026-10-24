@@ -156,16 +156,19 @@ ul.sites, ul.places { list-style: none; margin: 0; padding: 0; }
 .drive::after { content: "\2192"; margin-left: 6px; }
 .drive:hover { background: var(--primary-light); }
 
-/* Edit / Remove are hidden until "Edit" is switched on for the block, so
-   phones never depend on hover. */
-.item-tools { display: none; gap: 8px; margin-top: 8px; }
+/* Drag / Edit / Remove are hidden until "Edit" is switched on for the block, so phones never depend on
+   hover. While editing they sit on the RIGHT of each row as small icon buttons (never under the title);
+   the Drive button gives its place to them, since it is not needed while arranging. */
+.item-tools { display: none; gap: 6px; align-items: center; flex: none; }
 .editing .item-tools { display: flex; }
 .item-tools form { margin: 0; }
+.editing .site-item, .editing .place { display: flex; align-items: center; gap: 8px; }
+.editing .site-item > .site, .editing .place > .place-row { flex: 1; min-width: 0; }
+.editing .drive { display: none; }
 .tool {
-  min-height: 40px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--border);
-  background: var(--surface); font-size: 14px;
+  min-width: 40px; min-height: 40px; padding: 0; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface); display: inline-grid; place-items: center;
 }
-.item-tools { flex-wrap: wrap; align-items: center; }
 .tool[disabled] { opacity: .35; cursor: default; }
 .move-status { margin: 0 0 10px; color: var(--danger); font-size: 14px; }
 .tool-danger { color: var(--danger); border-color: var(--danger); }
@@ -197,7 +200,6 @@ ul.sites, ul.places { list-style: none; margin: 0; padding: 0; }
   .wrapper:not(.wrapper-bare) .region-main_content { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 20px; align-items: start; }
   .block { padding: 18px 20px; }
   .btn:not(.btn-block) { min-height: 38px; }
-  .tool { min-height: 34px; }
 }
 
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; animation: none !important; } }

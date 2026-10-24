@@ -20,13 +20,13 @@
                     <span class="site-text"><b>{{{ $l['title'] }}}</b><small>{{{ $l['label'] }}}</small></span>
                 </a>
                 <span class="item-tools">
-                    <button type="button" class="tool tool-grip" data-drag-handle aria-label="Drag {{{ $l['title'] }}} to reorder"></button>
-                    <button type="button" class="tool" data-open-dialog="link-dialog"
+                    <button type="button" class="tool tool-grip" data-drag-handle title="Drag to reorder" aria-label="Drag {{{ $l['title'] }}} to reorder"></button>
+                    <button type="button" class="tool" data-open-dialog="link-dialog" title="Edit"
                             data-id="{{{ $l['id'] }}}" data-title="{{{ $l['title'] }}}" data-url="{{{ $l['url'] }}}" data-icon="{{{ $l['icon_url'] }}}"
-                            aria-label="Edit {{{ $l['title'] }}}">Edit</button>
+                            aria-label="Edit {{{ $l['title'] }}}"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg></button>
                     <form method="post" action="{{{ $delete_base }}}/{{{ $l['id'] }}}/delete" data-confirm="Remove {{{ $l['title'] }}}?">
                         {{ csrf_field() }}
-                        <button type="submit" class="tool tool-danger" aria-label="Remove {{{ $l['title'] }}}">Remove</button>
+                        <button type="submit" class="tool tool-danger" title="Remove" aria-label="Remove {{{ $l['title'] }}}"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13M10 11v6M14 11v6"/></svg></button>
                     </form>
                 </span>
             </li>
