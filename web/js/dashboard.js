@@ -74,7 +74,32 @@
     block.classList.toggle('editing', on);
     tog.setAttribute('aria-pressed', on ? 'true' : 'false');
     tog.textContent = on ? 'Done' : 'Edit';
+    lockLinks(block, on);
   });
+
+  /* While a block is being edited its links must not open: a tap that is meant to grab, edit or remove an
+     item must never navigate away. The href is taken off (and put back on Done), which also stops
+     middle-click, "open in new tab", long-press previews and keyboard activation, not just a plain click;
+     the capture-phase handler below is a second line of defence. */
+  function lockLinks(block, on) {
+    Array.prototype.forEach.call(block.querySelectorAll('a.site, a.drive'), function (a) {
+      if (on) {
+        if (a.hasAttribute('href')) { a.setAttribute('data-href', a.getAttribute('href')); a.removeAttribute('href'); }
+        a.setAttribute('aria-disabled', 'true');
+      } else {
+        if (a.hasAttribute('data-href')) { a.setAttribute('href', a.getAttribute('data-href')); a.removeAttribute('data-href'); }
+        a.removeAttribute('aria-disabled');
+      }
+    });
+  }
+  function lockedLink(ev) {
+    var a = ev.target.closest && ev.target.closest('a.site, a.drive');
+    return a && a.closest('.editing') ? a : null;
+  }
+  ['click', 'auxclick'].forEach(function (type) {
+    document.addEventListener(type, function (ev) { if (lockedLink(ev)) ev.preventDefault(); }, true);
+  });
+  document.addEventListener('dragstart', function (ev) { if (lockedLink(ev)) ev.preventDefault(); });
 
   /* ---------- add / edit dialogs ---------- */
   function fill(dlg, d) {

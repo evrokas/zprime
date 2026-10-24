@@ -165,6 +165,8 @@ ul.sites, ul.places { list-style: none; margin: 0; padding: 0; }
 .editing .site-item, .editing .place { display: flex; align-items: center; gap: 8px; }
 .editing .site-item > .site, .editing .place > .place-row { flex: 1; min-width: 0; }
 .editing .drive { display: none; }
+.editing .site { cursor: default; -webkit-touch-callout: none; }
+.editing .site:hover, .editing .site:active { border-color: var(--border); }   /* a locked row must not look clickable */
 .tool {
   min-width: 40px; min-height: 40px; padding: 0; border-radius: 8px; border: 1px solid var(--border);
   background: var(--surface); display: inline-grid; place-items: center;
