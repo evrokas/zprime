@@ -152,8 +152,8 @@ hostname keeps its own 30-day cookie. True single sign-on would use the ErnsAuth
 
 ## Weather forecast
 
-The **Forecast** block shows the next 24 hours (temperature, conditions, chance of rain, scrollable) and the next 7 days
-(conditions, low/high range bars, rain and wind) for the home location set in `config/site.info.yaml` (`home:`).
+The **Forecast** block shows the next 24 hours (temperature, conditions, chance of rain, scrollable) and the next 14 days
+(conditions, low/high range bars, rain and wind; `forecast_days` in `config/settings.info.yaml`, 7 to 16, days after the first week are marked as a less reliable outlook). Tap a day to open its hour-by-hour table (conditions, temperature, chance and amount of rain, wind); opening another day closes the first for the home location set in `config/site.info.yaml` (`home:`).
 Data comes from Open-Meteo (no key), cached server-side for `forecast_cache_seconds` (default 1800, minimum 300), so any
 number of open devices cost one request per window. If the service is down the last forecast is shown, marked
 "Last known forecast", and a failed refresh is not retried for a minute. Icons are emoji by default (fog uses the same ☁️ as overcast; the words beside it say which); set `forecast_icons: drawn` in `config/site.info.yaml` for built-in line icons that look identical on every device. The day icon is Open-Meteo's own daily code by default, which is the *most severe* condition of the day (one foggy early hour can make a clear day show as fog). Set `forecast_day_condition: daytime` in `config/settings.info.yaml` to work it out from the daytime hours (07:00-21:00) instead: thunderstorm, snow, rain or drizzle count when they last two hours or more, fog only when it fills most of the daytime, otherwise the most common sky; it applies immediately, no cache clearing. Units follow `temperature_unit`

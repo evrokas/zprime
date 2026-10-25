@@ -24,6 +24,7 @@ function zprime_home_config(): array {
     if(is_array($fttl)) $fttl = end($fttl);
     $icons = $cfg['forecast_icons'] ?? 'emoji';
     if(is_array($icons)) $icons = end($icons);
+    $days = zprime_forecast_days($cfg['forecast_days'] ?? 14);
     $day = $cfg['forecast_day_condition'] ?? 'service';
     if(is_array($day)) $day = end($day);
     return [
@@ -33,6 +34,7 @@ function zprime_home_config(): array {
         'unit' => $unit === 'fahrenheit' ? 'fahrenheit' : 'celsius',
         'ttl' => max(60, (int)$ttl),
         'forecast_ttl' => max(300, (int)$fttl),
+        'forecast_days' => $days,
         'forecast_icons' => $icons === 'drawn' ? 'drawn' : 'emoji',
         'forecast_day' => $day === 'daytime' ? 'daytime' : 'service',
         'tz' => (string)($cfg['tz'] ?? 'UTC'),

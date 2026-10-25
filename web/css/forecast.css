@@ -40,23 +40,57 @@
 .fc-pop.is-wet { color: var(--primary); font-weight: 600; }
 
 .fc-days { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.fc-item { border-top: 1px solid var(--border); }
+.fc-item:first-child { border-top: 0; }
 .fc-day {
-  display: grid; grid-template-columns: 4.4rem 2rem 2.6rem minmax(0, 1fr); align-items: center; gap: 4px 10px;
-  padding: 8px 0; border-top: 1px solid var(--border); min-height: var(--tap);
+  display: grid; grid-template-columns: 4.4rem 2rem 2.6rem minmax(0, 1fr) 1.1rem; align-items: center; gap: 4px 10px;
+  width: 100%; padding: 8px 0; min-height: var(--tap); text-align: left;
+  background: none; border: 0; color: inherit; font: inherit; cursor: pointer;
 }
-.fc-day:first-child { border-top: 0; }
+.fc-day:hover .fc-d-name { text-decoration: underline; text-underline-offset: 3px; }
 .fc-d-name { font-weight: 600; }
 .fc-d-name small { display: block; font-weight: 400; font-size: 12px; color: var(--text-2); }
 .fc-d-range { display: grid; grid-template-columns: 2.4rem minmax(0, 1fr) 2.4rem; align-items: center; gap: 8px; font-variant-numeric: tabular-nums; }
 .fc-d-range .lo { text-align: right; color: var(--text-2); }
 .fc-track { position: relative; height: 6px; border-radius: 3px; background: var(--muted); }
 .fc-fill { position: absolute; top: 0; bottom: 0; border-radius: 3px; background: var(--fc-warm); }
-.fc-d-meta { grid-column: 2 / -1; font-size: 13px; color: var(--text-2); }
+.fc-d-meta { grid-column: 2 / 5; font-size: 13px; color: var(--text-2); }
 .fc-d-mlabel { color: var(--text); }
 .fc-d-label { display: none; font-size: 14px; color: var(--text-2); }   /* before the media query that shows it */
+.fc-chev { grid-column: 5; grid-row: 1; justify-self: end; width: 8px; height: 8px; border-right: 2px solid var(--text-2); border-bottom: 2px solid var(--text-2); transform: rotate(45deg); transition: transform .15s; }
+.fc-item.is-open .fc-chev { transform: rotate(225deg); }
+.fc-item.is-open .fc-day { border-bottom: 1px dashed var(--border); }
+/* days beyond the first week are an outlook: quieter, never styled like a firm forecast */
+.is-far .fc-d-name { color: var(--text-2); }
+.is-far .fc-fill { opacity: .55; }
+.fc-note { margin: 8px 0 0; font-size: 13px; color: var(--text-2); }
 @media (min-width: 640px) {
-  .fc-day { grid-template-columns: 5rem 2rem 8rem 3rem minmax(0, 1fr) 9rem; }
+  .fc-day { grid-template-columns: 5rem 2rem 8rem 3rem minmax(0, 1fr) 9rem 1.1rem; }
   .fc-d-label { display: block; }
   .fc-d-mlabel { display: none; }
   .fc-d-meta { grid-column: auto; text-align: right; }
+  .fc-chev { grid-column: 7; }
 }
+
+/* the hour-by-hour table under an opened day */
+.fc-panel { padding: 4px 0 10px; }
+.fc-table-wrap { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--bg); }
+.fc-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 13px; font-variant-numeric: tabular-nums; }
+.fc-table th, .fc-table td { padding: 5px 6px; text-align: right; border-top: 1px solid var(--border); }
+.fc-table thead th { border-top: 0; color: var(--text-2); font-weight: 600; font-size: 12px; background: var(--surface); }
+.fc-table tbody th { font-weight: 500; text-align: left; }
+.fc-table th:first-child, .fc-table td:first-child, .fc-table td.fc-t-w, .fc-table thead th:nth-child(2) { text-align: left; }
+.fc-table th:nth-child(1) { width: 3.1rem; }
+.fc-table th:nth-child(3) { width: 2.9rem; }
+.fc-table th:nth-child(4) { width: 3.5rem; }
+.fc-table th:nth-child(5) { width: 3.2rem; }
+.fc-table thead th small { display: block; font-weight: 400; font-size: 10.5px; }
+.fc-t-wi { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.fc-t-wi .fc-icon { flex: none; width: 1.5rem; height: 1.5rem; font-size: 1.1rem; }
+.fc-t-wi span:last-child { line-height: 1.25; }   /* wraps instead of being cut to "Part…" */
+.fc-t-temp { font-weight: 600; }
+.fc-t-rain small { display: block; font-size: 11px; color: var(--text-2); }
+.fc-table tr.is-wet td:nth-child(4), .fc-table tr.is-wet td:nth-child(4) span { color: var(--primary); font-weight: 600; }
+.fc-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.fc-item .fc-icon { --fc-icon-bg: var(--surface); }
+.fc-table .fc-icon { --fc-icon-bg: var(--bg); }

@@ -30,6 +30,18 @@ function zprime_functional_forecast_helpers(TestRunner $runner): void {
         assert_equal(12, $f['hourly'][0]['pop']);
     });
 
+    $runner->add('forecast: every day carries its own 24 hour rows, with missing columns as null and hours without a temperature left out', function () use ($raw) {
+        $f = zprime_forecast_shape($raw(0), gmmktime(0, 0, 0, 10, 19, 2026));
+        $day = $f['daily'][0];
+        assert_equal(23, count($day['hours']), '24 hours minus the one without a temperature');
+        assert_equal('00:00', $day['hours'][0]['h']);
+        assert_equal('06:00', $day['hours'][5]['h'], 'hour 05 has no temperature and must be skipped');
+        assert_null($day['hours'][0]['precip'], 'a column the answer lacks must be null, not 0');
+        assert_null($day['hours'][0]['wind']);
+        assert_equal(24, count($f['daily'][1]['hours']));
+        assert_equal('2026-10-19', $day['date']);
+    });
+
     $runner->add('forecast: the same instant in another time zone picks a different start hour', function () use ($raw) {
         $now = gmmktime(10, 30, 0, 10, 19, 2026);
         assert_equal('2026-10-19T04:00', zprime_forecast_shape($raw(-21600), $now)['hourly'][0]['t']);   // 04:30 local
@@ -146,11 +158,35 @@ function zprime_functional_forecast(TestRunner $runner, string $baseUrl, Weather
         $d = ['time' => [gmdate('Y-m-d', $midnight), gmdate('Y-m-d', $midnight + 86400)], 'weather_code' => [45, 45],
               'temperature_2m_max' => [20, 20], 'temperature_2m_min' => [10, 10]];
         $home = ['lat' => 1.5, 'lon' => 2.5, 'unit' => 'celsius', 'ttl' => 600, 'forecast_ttl' => 1800];
-        file_put_contents($cache, json_encode(['key' => '1.5000,2.5000,celsius', 'fetched' => time(),
+        file_put_contents($cache, json_encode(['key' => '1.5000,2.5000,celsius,d14,v2', 'fetched' => time(),
             'raw' => ['hourly' => $h, 'daily' => $d, 'utc_offset_seconds' => 7200]]));
         assert_equal('Fog', zprime_forecast_get($home, false)['daily'][0]['label'], 'default (service) must show the service code');
         assert_equal('Fog', zprime_forecast_get($home + ['forecast_day' => 'service'], false)['daily'][0]['label']);
         assert_equal('Clear', zprime_forecast_get($home + ['forecast_day' => 'daytime'], false)['daily'][0]['label'], 'daytime setting did not reach the shaper');
+        @unlink($cache);
+    });
+
+    $runner->add('forecast days: clamped to Open-Meteo\'s 7..16, default 14', function () {
+        assert_equal(14, zprime_forecast_days(null));
+        assert_equal(14, zprime_forecast_days('junk'));
+        assert_equal(7, zprime_forecast_days(3));
+        assert_equal(16, zprime_forecast_days(99));
+        assert_equal(10, zprime_forecast_days('10'));
+        assert_equal(12, zprime_forecast_days([8, 12]), 'a value merged across config layers takes the last');
+    });
+
+    $runner->add('changing the number of days refetches instead of reusing the cached file', function () use ($cache, $stub) {
+        @unlink($cache); @unlink($cache . '.fail');
+        $home = ['lat' => 1.5, 'lon' => 2.5, 'unit' => 'celsius', 'ttl' => 600, 'forecast_ttl' => 1800, 'forecast_days' => 9];
+        $before = $stub->requests();
+        $f = zprime_forecast_get($home, true);
+        assert_equal(9, count($f['daily']), 'asked for 9 days');
+        assert_equal($before + 1, $stub->requests());
+        assert_equal(9, count(zprime_forecast_get($home, true)['daily']));
+        assert_equal($before + 1, $stub->requests(), 'same settings must hit the cache');
+        assert_null(zprime_forecast_get(['forecast_days' => 12] + $home, false), 'a different day count must not reuse the 9-day cache');
+        $g = zprime_forecast_get(['forecast_days' => 12] + $home, true);
+        assert_equal(12, count($g['daily']));
         @unlink($cache);
     });
 
@@ -161,7 +197,14 @@ function zprime_functional_forecast(TestRunner $runner, string $baseUrl, Weather
         $j = json_decode($res['body'], true);
         assert_equal($before + 1, $stub->requests());
         assert_equal(24, count($j['hourly']));
-        assert_equal(7, count($j['daily']));
+        assert_equal(14, count($j['daily']), 'config default is 14 days');
+        // every day carries its own hour-by-hour rows for the expandable table
+        foreach ([0, 6, 13] as $k) {
+            assert_equal(24, count($j['daily'][$k]['hours']), "day $k hours");
+        }
+        $hr = $j['daily'][6]['hours'][13];
+        assert_equal('13:00', $hr['h']);
+        assert_true(isset($hr['temp'], $hr['code'], $hr['icon'], $hr['label'], $hr['pop'], $hr['precip'], $hr['wind']), 'hour row is missing fields');
         assert_equal('C', $j['unit']);
         assert_equal('km/h', $j['speed_unit']);
         assert_equal(false, $j['stale']);

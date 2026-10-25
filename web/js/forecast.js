@@ -88,6 +88,55 @@
     return new Date(date + 'T12:00:00Z').toLocaleDateString(undefined, { day: 'numeric', month: 'short', timeZone: 'UTC' });
   }
 
+  /* One day open at a time: opening a day closes every other one. */
+  function toggleDay(list, li, btn, panel, d) {
+    var open = btn.getAttribute('aria-expanded') !== 'true';
+    Array.prototype.forEach.call(list.querySelectorAll('.fc-day[aria-expanded="true"]'), function (b) {
+      b.setAttribute('aria-expanded', 'false');
+      b.parentNode.classList.remove('is-open');
+      b.parentNode.querySelector('.fc-panel').hidden = true;
+    });
+    if (!open) return;
+    if (!panel.firstChild) panel.appendChild(hoursTable(d));
+    btn.setAttribute('aria-expanded', 'true');
+    li.classList.add('is-open');
+    panel.hidden = false;
+    // rows above may have just collapsed and shifted the page: keep the opened day on screen
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    li.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
+  }
+
+  function hoursTable(d) {
+    var wrap = el('div', 'fc-table-wrap');
+    if (!d.hours || !d.hours.length) { wrap.appendChild(el('p', 'empty', 'No hourly data for this day.')); return wrap; }
+    var tbl = el('table', 'fc-table');
+    tbl.appendChild(el('caption', 'fc-sr', 'Hour by hour for ' + dayName(d.date, 99) + ' ' + dayDate(d.date)));
+    var head = el('tr');
+    [['Time'], ['Weather'], ['Temp'], ['Rain'], ['Wind', data.speed_unit]].forEach(function (h) {
+      var th = el('th', '', h[0]); th.scope = 'col';
+      if (h[1]) th.appendChild(el('small', '', h[1]));      // the unit lives in the header so the cells stay narrow
+      head.appendChild(th);
+    });
+    var thead = el('thead'); thead.appendChild(head); tbl.appendChild(thead);
+    var tb = el('tbody');
+    d.hours.forEach(function (h) {
+      var tr = el('tr', h.pop != null && h.pop >= 40 ? 'is-wet' : '');
+      var th = el('th', '', h.h); th.scope = 'row'; tr.appendChild(th);
+      var w = el('td', 'fc-t-w'), wi = el('div', 'fc-t-wi');   // flex lives on an inner box: a flex <td> breaks table layout
+      wi.appendChild(icon(h.code, h.icon)); wi.appendChild(el('span', '', h.label)); w.appendChild(wi); tr.appendChild(w);
+      tr.appendChild(el('td', 'fc-t-temp', deg(h.temp)));
+      var rain = el('td', 'fc-t-rain');
+      rain.appendChild(el('span', '', h.pop == null ? '–' : h.pop + '%'));
+      if (h.precip != null && h.precip > 0) rain.appendChild(el('small', '', h.precip + ' ' + data.precip_unit));
+      tr.appendChild(rain);
+      tr.appendChild(el('td', 'fc-t-wind', h.wind == null ? '–' : String(h.wind)));
+      tb.appendChild(tr);
+    });
+    tbl.appendChild(tb);
+    wrap.appendChild(tbl);
+    return wrap;
+  }
+
   function render() {
     body.textContent = '';
 
@@ -106,19 +155,27 @@
     });
     body.appendChild(hours);
 
-    body.appendChild(el('h3', 'fc-sub', 'Next 7 days'));
+    var n = data.daily.length;
+    body.appendChild(el('h3', 'fc-sub', 'Next ' + n + ' days'));
     var lo = Infinity, hi = -Infinity;
     data.daily.forEach(function (d) { lo = Math.min(lo, d.tmin); hi = Math.max(hi, d.tmax); });
     var span = Math.max(1, hi - lo);
     var days = el('ul', 'fc-days');
     data.daily.forEach(function (d, i) {
-      var li = el('li', 'fc-day');
+      var li = el('li', 'fc-item' + (i >= 7 ? ' is-far' : ''));
+      var panelId = 'fc-day-' + i;
+
+      // the whole row is one button: tap a day to see its hours
+      var btn = el('button', 'fc-day');
+      btn.type = 'button';
+      btn.setAttribute('aria-expanded', 'false');
+      btn.setAttribute('aria-controls', panelId);
       var name = el('span', 'fc-d-name', dayName(d.date, i));
       name.appendChild(el('small', '', dayDate(d.date)));
-      li.appendChild(name);
-      li.appendChild(icon(d.code, d.icon));
-      li.appendChild(el('span', 'fc-d-label', d.label));
-      li.appendChild(pop(d.pop));
+      btn.appendChild(name);
+      btn.appendChild(icon(d.code, d.icon));
+      btn.appendChild(el('span', 'fc-d-label', d.label));
+      btn.appendChild(pop(d.pop));
 
       var range = el('span', 'fc-d-range');
       range.appendChild(el('span', 'lo', deg(d.tmin)));
@@ -128,7 +185,7 @@
       track.appendChild(fill);
       range.appendChild(track);
       range.appendChild(el('span', 'hi', deg(d.tmax)));
-      li.appendChild(range);
+      btn.appendChild(range);
 
       var meta = [];
       if (d.precip > 0) meta.push(d.precip + ' ' + data.precip_unit);
@@ -138,12 +195,21 @@
       var metaEl = el('span', 'fc-d-meta');
       metaEl.appendChild(el('span', 'fc-d-mlabel', d.label + (meta.length ? ' · ' : '')));
       metaEl.appendChild(document.createTextNode(meta.join(' · ')));
-      li.appendChild(metaEl);
-      li.setAttribute('aria-label', dayName(d.date, i) + ', ' + d.label + ', low ' + deg(d.tmin) + ', high ' + deg(d.tmax) +
-        (d.pop != null && d.pop >= 10 ? ', ' + d.pop + '% chance of precipitation' : ''));
+      btn.appendChild(metaEl);
+      btn.appendChild(el('span', 'fc-chev'));
+      btn.setAttribute('aria-label', dayName(d.date, i) + ', ' + d.label + ', low ' + deg(d.tmin) + ', high ' + deg(d.tmax) +
+        (d.pop != null && d.pop >= 10 ? ', ' + d.pop + '% chance of precipitation' : '') + (i >= 7 ? ', outlook' : '') + '. Show hours.');
+      li.appendChild(btn);
+
+      var panel = el('div', 'fc-panel');
+      panel.id = panelId;
+      panel.hidden = true;
+      li.appendChild(panel);
+      btn.addEventListener('click', function () { toggleDay(days, li, btn, panel, d); });
       days.appendChild(li);
     });
     body.appendChild(days);
+    if (n > 7) body.appendChild(el('p', 'fc-note', 'Beyond the first week the forecast is an outlook: less reliable the further ahead it looks.'));
 
     var t = new Date(data.fetched * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
     updated.textContent = data.stale ? 'Last known forecast, updated ' + t : 'Updated ' + t;

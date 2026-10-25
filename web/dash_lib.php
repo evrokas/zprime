@@ -225,6 +225,12 @@ function zprime_weather_icon(int $code): string {
  * current reading (one request per cache window however many devices are open).
  * ------------------------------------------------------------------- */
 
+/** Number of forecast days to fetch: Open-Meteo allows up to 16; below 7 makes no sense here. Default 14. */
+function zprime_forecast_days($v): int {
+    if(is_array($v)) $v = end($v);
+    return is_numeric($v) ? max(7, min(16, (int)$v)) : 14;
+}
+
 function zprime_forecast_cache_file(): string {
     return dirname(zprime_weather_cache_file()) . '/zprime-forecast.json';
 }
@@ -296,13 +302,26 @@ function zprime_forecast_shape(array $raw, int $nowTs, string $dayMode = 'servic
         if(count($hourly) >= 24) break;
     }
 
-    // daytime codes per local date, from the whole hourly list (including hours already past)
+    // per local date: the daytime codes (for the day condition) and every hour (for the expandable table),
+    // from the whole hourly list including hours already past
     $dayCodes = [];
+    $dayHours = [];
     foreach($h['time'] as $i => $t) {
-        if(!is_string($t) || strlen($t) < 13) continue;
+        if(!is_string($t) || strlen($t) < 16) continue;
+        $date = substr($t, 0, 10);
         $hour = (int)substr($t, 11, 2);
         $c = $col($h, 'weather_code', $i);
-        if($hour >= 7 && $hour <= 21 && $c !== null) $dayCodes[substr($t, 0, 10)][] = (int)$c;
+        if($hour >= 7 && $hour <= 21 && $c !== null) $dayCodes[$date][] = (int)$c;
+        $temp = $col($h, 'temperature_2m', $i);
+        if($temp === null) continue;
+        $code = (int)($c ?? -1);
+        $dayHours[$date][] = [
+            'h' => substr($t, 11, 5), 'temp' => round($temp, 1), 'code' => $code,
+            'icon' => zprime_weather_icon($code), 'label' => zprime_weather_label($code),
+            'pop' => ($p = $col($h, 'precipitation_probability', $i)) === null ? null : (int)round($p),
+            'precip' => ($p = $col($h, 'precipitation', $i)) === null ? null : round($p, 1),
+            'wind' => ($p = $col($h, 'wind_speed_10m', $i)) === null ? null : (int)round($p),
+        ];
     }
 
     $daily = [];
@@ -318,6 +337,7 @@ function zprime_forecast_shape(array $raw, int $nowTs, string $dayMode = 'servic
             'pop' => ($p = $col($d, 'precipitation_probability_max', $i)) === null ? null : (int)round($p),
             'precip' => round($col($d, 'precipitation_sum', $i) ?? 0, 1),
             'wind' => round($col($d, 'wind_speed_10m_max', $i) ?? 0),
+            'hours' => $dayHours[$date] ?? [],
         ];
     }
     return ($hourly && $daily) ? ['hourly' => $hourly, 'daily' => $daily] : null;
@@ -332,7 +352,9 @@ function zprime_forecast_shape(array $raw, int $nowTs, string $dayMode = 'servic
  */
 function zprime_forecast_get(array $home, bool $fetch): ?array {
     $file = zprime_forecast_cache_file();
-    $key = sprintf('%.4F,%.4F,%s', $home['lat'], $home['lon'], $home['unit']);
+    $days = zprime_forecast_days($home['forecast_days'] ?? 14);
+    // the key carries the day count and a data-shape version, so changing either refetches instead of reusing an old file
+    $key = sprintf('%.4F,%.4F,%s,d%d,v2', $home['lat'], $home['lon'], $home['unit'], $days);
     $ttl = max(300, (int)($home['forecast_ttl'] ?? 1800));
 
     $cached = null;
@@ -360,9 +382,9 @@ function zprime_forecast_get(array $home, bool $fetch): ?array {
     $url = $base . '?' . http_build_query([
         'latitude' => sprintf('%.4F', $home['lat']),
         'longitude' => sprintf('%.4F', $home['lon']),
-        'hourly' => 'temperature_2m,weather_code,precipitation_probability',
+        'hourly' => 'temperature_2m,weather_code,precipitation_probability,precipitation,wind_speed_10m',
         'daily' => 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max',
-        'forecast_days' => 7,
+        'forecast_days' => $days,
         'timezone' => 'auto',
         'temperature_unit' => $home['unit'],
         'wind_speed_unit' => $f ? 'mph' : 'kmh',

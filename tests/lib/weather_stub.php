@@ -18,17 +18,21 @@ if (isset($_GET['daily'])) {                         // forecast request: 7 days
     $midnight = intdiv(time() + $off, 86400) * 86400;
     $codes = [0, 2, 61, 3, 71, 95, 45];
     $h = ['time' => [], 'temperature_2m' => [], 'weather_code' => [], 'precipitation_probability' => []];
-    for ($i = 0; $i < 168; $i++) {
+    $days = max(1, min(16, (int)($_GET['forecast_days'] ?? 7)));
+    $h['precipitation'] = []; $h['wind_speed_10m'] = [];
+    for ($i = 0; $i < 24 * $days; $i++) {
         $h['time'][] = gmdate('Y-m-d\TH:00', $midnight + $i * 3600);
         $h['temperature_2m'][] = 10 + ($i % 24) / 2 + intdiv($i, 24);
         $h['weather_code'][] = $codes[intdiv($i, 24) % 7];
         $h['precipitation_probability'][] = ($i * 7) % 100;
+        $h['precipitation'][] = ($i % 5 === 0) ? 0.4 : 0;
+        $h['wind_speed_10m'][] = 10 + ($i % 9);
     }
     $d = ['time' => [], 'weather_code' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [],
           'precipitation_probability_max' => [], 'precipitation_sum' => [], 'wind_speed_10m_max' => []];
-    for ($i = 0; $i < 7; $i++) {
+    for ($i = 0; $i < $days; $i++) {
         $d['time'][] = gmdate('Y-m-d', $midnight + $i * 86400);
-        $d['weather_code'][] = $codes[$i];
+        $d['weather_code'][] = $codes[$i % 7];
         $d['temperature_2m_max'][] = 20.4 + $i;
         $d['temperature_2m_min'][] = 11.6 + $i;
         $d['precipitation_probability_max'][] = $i * 10;

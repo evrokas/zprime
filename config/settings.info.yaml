@@ -4,7 +4,11 @@ title: Dashboard
 
 tz: "Europe/Athens"
 
-# Which weather icon the 7-day forecast shows for each day:
+# How many days the forecast covers (7 to 16; Open-Meteo's limit is 16). The forecast gets less reliable the
+# further ahead it looks, so days beyond the first week are marked as an outlook. Changing it refetches.
+forecast_days: 14
+
+# Which weather icon the forecast shows for each day:
 #   service  Open-Meteo's own daily code: the MOST SEVERE condition of the day (default). One foggy early
 #            hour can make a clear day show as fog.
 #   daytime  worked out from the daytime hours (07:00-21:00): thunderstorm, snow, rain or drizzle if they
